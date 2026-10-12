@@ -1,4 +1,4 @@
-# Vassel Goleyu
+# Vassel Goleyu 3D Portofolio
 
 A scroll-driven 3D portfolio set in a cozy workspace. Built with React, TypeScript, Vite and React Three Fiber.
 
