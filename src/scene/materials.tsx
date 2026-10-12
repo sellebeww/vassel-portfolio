@@ -11,18 +11,6 @@ export function Block({ size, color = "#ede4d5", metalness = 0, roughness = .6, 
   </RoundedBox>;
 }
 
-export function Ellipsoid({ size, color, roughness = .65, ...props }: Transform & { size: V3; color: string; roughness?: number }) {
-  return <mesh castShadow receiveShadow {...props} scale={size}><sphereGeometry args={[1, 28, 20]} /><meshStandardMaterial color={color} roughness={roughness} /></mesh>;
-}
-
-export function Limb({ from, to, radius, color }: { from: V3; to: V3; radius: number; color: string }) {
-  const { position, quaternion, length } = useMemo(() => {
-    const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to);
-    return { position: a.clone().add(b).multiplyScalar(.5), quaternion: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()), length: a.distanceTo(b) };
-  }, [from, to]);
-  return <mesh position={position} quaternion={quaternion} castShadow receiveShadow><capsuleGeometry args={[radius, Math.max(.001, length - radius * 2), 8, 20]} /><meshStandardMaterial color={color} roughness={.72} /></mesh>;
-}
-
 /** Canvas textures are painted once, in the site's web fonts. The room does not wait for those fonts, so if
  * one finishes loading after a texture was painted (in a fallback face), this counter changes and every
  * texture that depends on it repaints. One listener for the whole scene; usually it never fires. */

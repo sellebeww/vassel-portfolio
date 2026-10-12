@@ -61,7 +61,7 @@ try {
   check('page behind the palette is inert', await page.$eval('.topbar', e => e.inert) && await page.$eval('main', e => e.inert));
   await page.screenshot({ path: new URL('palette.png', output).pathname });
   const groups = await page.$$eval('.palette-group', els => els.map(e => e.textContent));
-  check('palette is grouped when the query is empty', ['Go to', 'Open', 'Room', 'Time of day', 'Contact', 'Roles', 'Certificates'].every(g => groups.includes(g)), groups);
+  check('palette is grouped when the query is empty', ['Go to', 'Open', 'Room', 'Contact', 'Roles', 'Certificates'].every(g => groups.includes(g)), groups);
   await page.keyboard.type('supervisor'); await sleep(100);
   check('typing filters roles', (await page.$$eval('[role="option"]', els => els.map(e => e.textContent))).some(t => t.includes('Supervisor, Mister & Miss UMN')));
   await press(page, 'Enter');
@@ -77,18 +77,7 @@ try {
   check('number keys jump chapters', await active(page) === 'experience');
   check('tab title follows the chapter', await page.title() === 'Experiences — Vassel Goleyu', await page.title());
   check('chapter change is announced to screen readers', (await page.$eval('.sr-only[role="status"]', e => e.textContent)) === 'Chapter 2 of 6: Experiences');
-  const warmLight = await page.$eval('.site', e => e.dataset.warmLight); await press(page, 'l');
-  await page.waitForFunction(v => document.querySelector('.site').dataset.warmLight !== v, {}, warmLight);
-  check('L toggles the warm environmental light and shows a toast', (await page.$eval('.toast', e => e.textContent)).startsWith('Warm light'));
-  await press(page, 't'); await page.waitForFunction(() => document.querySelector('.site').dataset.atmosphere === 'night');
-  await press(page, 't'); await page.waitForFunction(() => document.querySelector('.site').dataset.atmosphere === 'dawn');
-  await press(page, 't'); await press(page, 't'); await press(page, 't'); await page.waitForFunction(() => document.querySelector('.site').dataset.atmosphere === 'auto');
-  check('T cycles Auto → Night → Dawn → Day → Sunset → Auto', true);
-  await press(page, 'k', 'Meta'); await page.waitForSelector('.palette'); await page.keyboard.type('sunset'); await press(page, 'Enter');
-  await page.waitForFunction(() => document.querySelector('.site').dataset.atmosphere === 'sunset');
-  await page.waitForFunction(() => document.querySelector('canvas').dataset.phase === 'sunset');
-  check('picking an atmosphere reaches the 3D light (override takes effect without reload)', true);
-  await page.keyboard.press('Escape');
+  // The L (warm light) and T (time of day) keys were removed: the light now follows the day cycle on its own.
 
   // ── Deep links ──────────────────────────────────────────────────────────
   await page.goto(`${ORIGIN}/?qa#role/duta-anti-narkoba/3`, { waitUntil: 'domcontentloaded' });

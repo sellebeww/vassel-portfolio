@@ -70,7 +70,7 @@ try {
   await scroll(.78); const stack=await capture('desktop-stack'); check('language and web-stack boards stand beside the laptop up close',stack.stack); check('camera has come in close for the boards',stack.camera[2]<coding.camera[2]);
   for (const [p,name] of [[.86,'laptop'],[.92,'screen'],[.955,'entering'],[.99,'contact']]) { await scroll(p); await capture(`desktop-${name}`); }
   check('contact becomes a live accessible interface',await page.$eval('.contact-portal',e=>!e.inert && e.getAttribute('aria-hidden')==='false'));
-  check('verified GitHub link',await page.$eval('.contact-socials a',e=>e.href)==='https://github.com/sellebeww');
+  check('verified GitHub link',(await page.$$eval('.contact-socials a',els=>els.map(e=>e.href))).includes('https://github.com/sellebeww'));
   await page.type('input[name="name"]','Scroll test'); await page.type('input[name="email"]','hello@example.com'); await page.type('textarea[name="message"]','A project idea.');
   check('real contact form validates input',await page.$eval('.contact-form',f=>f.checkValidity()));
   await scroll(.80); check('contact controls leave tab order while camera is outside',await page.$eval('.contact-portal',e=>e.inert));

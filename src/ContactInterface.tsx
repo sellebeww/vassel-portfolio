@@ -66,7 +66,7 @@ export default function ContactInterface({ surface, entered, onBack }: {
           <p>A project, a role or a question: tell me what you have in mind and I’ll write back.</p>
           <div className="contact-person"><span className="contact-monogram">VG.</span><div><strong>{profile.name}</strong><span>{profile.role}</span><small>{profile.location}</small></div></div>
           <div className="contact-address"><a href={`mailto:${profile.email}`}>{profile.email} <span>↗</span></a><button type="button" onClick={copy} aria-label="Copy email address">{copied ? "Copied ✓" : "Copy"}</button></div>
-          <div className="contact-socials"><a href={profile.whatsapp} target="_blank" rel="noreferrer">WhatsApp {profile.whatsappDisplay} <span>↗</span></a><a href={profile.instagram} target="_blank" rel="noreferrer">Instagram <span>↗</span></a><a href={profile.github} target="_blank" rel="noreferrer">GitHub <span>↗</span></a><a href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn <span>↗</span></a></div>
+          <div className="contact-socials"><a href={profile.whatsapp} target="_blank" rel="noreferrer">WhatsApp <span>↗</span></a><a href={profile.instagram} target="_blank" rel="noreferrer">Instagram <span>↗</span></a><a href={profile.github} target="_blank" rel="noreferrer">GitHub <span>↗</span></a><a href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn <span>↗</span></a></div>
         </div>
         <form ref={form} className="contact-form" onSubmit={send} onInput={remember}>
           <span className="contact-kicker">Send a note</span>

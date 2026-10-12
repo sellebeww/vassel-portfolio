@@ -89,8 +89,9 @@ kbd { font: 500 var(--fs-label)/1 var(--font-sans); padding: 4px 6px; border: 1p
 .scene-layer { position: fixed; inset: 0; z-index: 0; }
 .room-canvas { width: 100% !important; height: 100% !important; }
 .scene-shade { position: fixed; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, transparent 38%, rgb(15 25 32 / .1) 50%, rgb(15 25 32 / .74) 76%, rgb(15 25 32 / .9)); }
-/* Vignette (corners fall off like a lens) plus a top band so the navigation always reads. */
-.scene-shade::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(10 17 23 / .6), rgb(10 17 23 / .22) 8%, transparent 15%, transparent 90%, rgb(10 17 23 / .22)), radial-gradient(140% 120% at 42% 48%, transparent 66%, rgb(6 11 15 / .28)); }
+/* Vignette: the corners fall off like a lens. The band that keeps the navigation legible belongs to the
+   top bar itself (.topbar::before), so it stays when this shade fades out for the stack boards. */
+.scene-shade::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 90%, rgb(10 17 23 / .22)), radial-gradient(140% 120% at 42% 48%, transparent 66%, rgb(6 11 15 / .28)); }
 .site[data-active="experience"] .scene-shade { background: linear-gradient(90deg, transparent 42%, rgb(15 25 32 / .16) 53%, rgb(15 25 32 / .8) 68%, rgb(15 25 32 / .93) 85%); }
 .site[data-active="projects"] .scene-shade, .site[data-active="stack"] .scene-shade { background: linear-gradient(90deg, transparent 40%, rgb(15 25 32 / .12) 67%, rgb(15 25 32 / .85) 77%, rgb(15 25 32 / .97) 89%); }
 .site[data-active="contact"] .scene-shade { opacity: calc(1 - var(--screen-entry, 0)); background: linear-gradient(90deg, transparent 50%, rgb(15 25 32 / .55)); }
@@ -104,7 +105,6 @@ kbd { font: 500 var(--fs-label)/1 var(--font-sans); padding: 4px 6px; border: 1p
 .loading-room.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
 .loading-inner { display: grid; gap: var(--s-4); width: min(440px, 100%); transition: transform 600ms var(--ease-in-out), opacity 300ms var(--ease-in); }
 .loading-room.is-done .loading-inner { transform: translateY(-16px); opacity: 0; }
-.loading-kicker { font: 500 var(--fs-label)/1 var(--font-sans); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--lamp); }
 .loading-name { margin: 0; font: 400 clamp(2.75rem, 1.8rem + 4vw, 4.75rem)/.95 var(--font-display); letter-spacing: -.025em; animation: rise 1100ms var(--ease-out) both; }
 .loading-name em, h1 em, .contact-intro h2 em { font-style: italic; color: var(--lamp); }
 .loading-meter { height: 1px; overflow: hidden; background: var(--line); }
@@ -118,6 +118,9 @@ kbd { font: 500 var(--fs-label)/1 var(--font-sans); padding: 4px 6px; border: 1p
 
 /* ── Chrome: top bar, progress, wayfinding, dock ───────────────────────── */
 .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 20; height: 76px; padding: 0 var(--gutter); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+/* The links sit over the 3D room, which is bright where the monitors or a certificate pass behind them. */
+.site:not(.is-fallback) .topbar::before { content: ""; position: absolute; z-index: -1; inset: 0 0 -32px; pointer-events: none; background: linear-gradient(180deg, rgb(10 17 23 / .86), rgb(10 17 23 / .66) 55%, transparent); }
+.site[data-contact="inside"] .topbar::before { display: none; }
 .wordmark { justify-self: start; border: 0; padding: var(--s-2) 0; background: none; font: 600 1.375rem/1 var(--font-sans); letter-spacing: -.06em; transition: color var(--dur-1); }
 .wordmark span { color: var(--lamp); }
 .wordmark:hover { color: var(--lamp-strong); }
@@ -158,7 +161,8 @@ kbd { font: 500 var(--fs-label)/1 var(--font-sans); padding: 4px 6px; border: 1p
 main { position: relative; z-index: 3; pointer-events: none; }
 .chapter { position: fixed; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding: 96px var(--gutter) 72px 0; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity var(--dur-2) var(--ease-in), visibility 0s linear var(--dur-2); }
 .chapter.is-active { visibility: visible; opacity: 1; transition: opacity var(--dur-2) var(--ease-out), visibility 0s; }
-.chapter-card { width: min(420px, 34vw); max-height: calc(100dvh - 168px); overflow: hidden; padding: var(--s-1) var(--s-2) var(--s-1) 0; pointer-events: none; }
+/* Cards are sized to fit; if a short window still runs out of room, the card scrolls rather than cutting its end off. */
+.chapter-card { width: min(420px, 34vw); max-height: calc(100dvh - 168px); overflow: hidden auto; overscroll-behavior: contain; scrollbar-width: thin; padding: var(--s-1) var(--s-2) var(--s-1) 0; pointer-events: none; }
 .chapter.is-active .chapter-card { pointer-events: auto; }
 /* Staggered arrival: each block of the card lands 70 ms after the one above it, on a long expo-out.
    Leaving is quicker and un-staggered, so a fast scroll never stacks two cards. Before the room is
@@ -227,7 +231,8 @@ h2 { font-size: var(--fs-h2); }
 .projector-filmstrip img { display: block; width: 100%; height: 46px; object-fit: cover; }
 .projector-filmstrip span { position: absolute; right: 4px; bottom: 4px; padding: 2px 4px; background: var(--veil); color: var(--text-1); font: 400 var(--fs-label)/1 var(--font-sans); }
 .role-selector { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-3); color: var(--text-3); font: 400 var(--fs-label)/1.3 var(--font-sans); letter-spacing: .04em; }
-.role-selector select { min-width: 0; max-width: 70%; padding: var(--s-2); border: 1px solid var(--line-strong); border-radius: var(--r-1); background: var(--ink-800); color: var(--text-1); font: var(--fs-meta) var(--font-sans); }
+.role-selector span { flex: none; white-space: nowrap; }
+.role-selector select { flex: 1; min-width: 0; padding: var(--s-2); border: 1px solid var(--line-strong); border-radius: var(--r-1); background: var(--ink-800); color: var(--text-1); font: var(--fs-meta) var(--font-sans); }
 .detail-filmstrip { display: flex; gap: var(--s-2); overflow-x: auto; padding: 6px 2px 10px; scrollbar-width: thin; }
 .detail-filmstrip button { flex: 0 0 94px; }
 .detail-filmstrip img { display: block; width: 86px; height: 64px; object-fit: cover; }
@@ -285,14 +290,12 @@ h2 { font-size: var(--fs-h2); }
 .project-link.is-primary:hover { border-color: var(--lamp-strong); background: var(--lamp-strong); }
 .project-meta { display: block; margin-top: var(--s-3); color: var(--text-3); font-size: var(--fs-meta); line-height: 1.4; }
 .project-tour { margin-bottom: var(--s-5); }
-.project-tour .project-note { padding-top: var(--s-4); border-top: 1px solid var(--line); }
 /* The reading view lists every project as a card with its first screenshot. */
 .project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); margin: var(--s-5) 0; padding: 0; list-style: none; }
 .project-grid .project-note { display: flex; flex-direction: column; height: 100%; padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-2); background: rgb(239 233 223 / .02); animation: none; }
 .project-grid .project-note h3 { font-size: 1.625rem; }
 .project-grid .project-links { margin-top: auto; }
 .project-shot { display: block; width: 100%; aspect-ratio: 16 / 10; margin: 0 0 var(--s-3); object-fit: cover; object-position: top; border: 1px solid var(--line); border-radius: var(--r-1); background: var(--ink-950); }
-/* Room toggles: a contextual group inside the dock while the camera is at the desk. */
 
 /* Tech stack */
 .language-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: var(--s-4) 0 0; padding: 0; list-style: none; }
@@ -322,8 +325,8 @@ h2 { font-size: var(--fs-h2); }
 
 /* ── Dialogs ───────────────────────────────────────────────────────────── */
 .modal-shell { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: var(--s-4); background: rgb(10 17 23 / .8); backdrop-filter: blur(8px); animation: fade-in var(--dur-2) var(--ease-out); }
-.modal { width: min(940px, 96vw); max-height: 90dvh; overflow: auto; padding: clamp(var(--s-5), 4vw, 44px); border: 1px solid var(--line); border-radius: var(--r-2); background: var(--ink-800); color: var(--text-1); box-shadow: var(--shadow-2); animation: modal-in 500ms var(--ease-out); }
-.modal.is-wide { width: min(1040px, 96vw); }
+.modal { width: min(940px, 100%); max-height: 90dvh; overflow: auto; padding: clamp(var(--s-5), 4vw, 44px); border: 1px solid var(--line); border-radius: var(--r-2); background: var(--ink-800); color: var(--text-1); box-shadow: var(--shadow-2); animation: modal-in 500ms var(--ease-out); }
+.modal.is-wide { width: min(1040px, 100%); }
 .modal header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-5); }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes modal-in { from { opacity: 0; transform: translateY(16px) scale(.985); } }
@@ -403,7 +406,7 @@ h2 { font-size: var(--fs-h2); }
 
 /* Command palette */
 .palette-shell { align-items: start; padding-top: min(16vh, 140px); }
-.palette { display: flex; flex-direction: column; width: min(640px, 94vw); max-height: min(70dvh, 560px); overflow: hidden; border: 1px solid var(--line-strong); border-radius: var(--r-2); background: var(--ink-800); color: var(--text-1); box-shadow: var(--shadow-2); animation: modal-in 380ms var(--ease-out); }
+.palette { display: flex; flex-direction: column; width: min(640px, 100%); max-height: min(70dvh, 560px); overflow: hidden; border: 1px solid var(--line-strong); border-radius: var(--r-2); background: var(--ink-800); color: var(--text-1); box-shadow: var(--shadow-2); animation: modal-in 380ms var(--ease-out); }
 .palette-input { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border-bottom: 1px solid var(--line); }
 .palette-input > span { color: var(--lamp); }
 .palette-input input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--text-1); font-size: 1rem; }
@@ -426,12 +429,9 @@ h2 { font-size: var(--fs-h2); }
 .contact-portal { position: fixed; z-index: 8; inset: 0; width: 100vw; height: 100dvh; overflow: hidden; transform-origin: 0 0; background: var(--ink-900); color: var(--text-1); visibility: hidden; opacity: 0; pointer-events: none; will-change: transform; }
 .contact-portal[data-entered="true"] { overflow-y: auto; pointer-events: auto; will-change: auto; }
 .contact-website { min-height: 100%; padding: 100px max(5vw, 24px) var(--s-5); background: radial-gradient(70% 60% at 0% 30%, rgb(240 191 148 / .06), transparent 70%), var(--ink-900); }
-.contact-browser { display: flex; align-items: center; justify-content: space-between; padding: var(--s-3) 0 var(--s-5); border-bottom: 1px solid var(--line); color: var(--text-3); font: 400 var(--fs-label)/1 var(--font-sans); letter-spacing: .06em; }
-.contact-browser > span:first-child { display: flex; gap: 6px; }
-.contact-browser i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
 .contact-web-body { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: clamp(40px, 8vw, 140px); width: min(1120px, 100%); margin: auto; padding: clamp(var(--s-6), 6vh, 80px) 0 var(--s-6); }
-.contact-kicker { display: flex; align-items: center; gap: var(--s-2); color: var(--lamp); font: 500 var(--fs-label)/1 var(--font-sans); letter-spacing: var(--track-label); text-transform: uppercase; }
-.contact-kicker i { width: 6px; height: 6px; border-radius: 50%; background: var(--lamp); box-shadow: 0 0 10px var(--lamp); }
+.contact-kicker { display: flex; align-items: flex-start; gap: var(--s-2); color: var(--lamp); font: 500 var(--fs-label)/1.5 var(--font-sans); letter-spacing: var(--track-label); text-transform: uppercase; }
+.contact-kicker i { flex: none; width: 6px; height: 6px; margin-top: calc(.75em - 3px); border-radius: 50%; background: var(--lamp); box-shadow: 0 0 10px var(--lamp); }
 .contact-intro h2 { margin: var(--s-5) 0; font-size: clamp(3rem, 1.8rem + 4vw, 5.5rem); line-height: .95; letter-spacing: -.03em; }
 .contact-intro p { max-width: 38ch; color: var(--text-2); font-size: var(--fs-lead); line-height: 1.6; }
 .contact-person { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-6); }
@@ -487,7 +487,7 @@ h2 { font-size: var(--fs-h2); }
 .is-fallback .stack-notes dd { display: block; }
 .is-fallback .dock { position: fixed; left: 50%; right: auto; bottom: max(14px, env(safe-area-inset-bottom)); margin: 0; width: max-content; transform: translateX(-50%); box-shadow: var(--shadow-1); }
 .is-fallback .contact-portal { position: relative; height: auto; visibility: visible !important; opacity: 1 !important; transform: none !important; }
-.is-fallback #contact { display: none; }
+.is-fallback #contact, .is-fallback .quiet-note { display: none; }
 .fallback-portrait { float: right; width: min(35%, 220px); aspect-ratio: 4 / 5; margin: 0 0 var(--s-4) var(--s-6); object-fit: cover; border-radius: var(--r-2); box-shadow: var(--shadow-1); }
 .fallback-notice { margin-bottom: var(--s-6) !important; padding: var(--s-3) var(--s-4); border-left: 2px solid var(--lamp); border-radius: 0 var(--r-1) var(--r-1) 0; background: var(--lamp-wash); color: var(--text-1) !important; font-size: var(--fs-small) !important; }
 
@@ -525,7 +525,6 @@ h2 { font-size: var(--fs-h2); }
 @media (min-width: 1001px) and (max-height: 800px) {
   .site:not(.is-fallback) #projects { padding-top: clamp(84px, 12dvh, 112px); }
   .site:not(.is-fallback) #projects .chapter-deck { display: none; }
-  .site:not(.is-fallback) #projects .project-tour .project-note { padding-top: var(--s-3); }
   .site:not(.is-fallback) #projects .project-note h3 { margin: var(--s-2) 0 var(--s-2); font-size: 1.5rem; }
   .site:not(.is-fallback) #projects .project-stack { margin-bottom: var(--s-2); }
   .site:not(.is-fallback) #projects .project-meta { display: none; }
@@ -533,12 +532,11 @@ h2 { font-size: var(--fs-h2); }
   .site:not(.is-fallback) #projects .project-details[open] summary { margin-bottom: var(--s-2); }
   .site:not(.is-fallback) #projects .project-details[open] dd { -webkit-line-clamp: 2; }
 }
-/* An opened "Implementation & evidence" panel takes the room the stack chips and links would use. */
-@media (min-width: 1001px) {
-  .site:not(.is-fallback) #projects .project-note:has(.project-details[open]) :is(.project-stack, .project-meta, .project-details + *) { display: none; }
-  .site:not(.is-fallback) #projects .project-note:has(.project-details[open]) > p { display: none; }
-  .site:not(.is-fallback) #projects .project-details[open] dd { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-}
+/* An opened "Implementation & evidence" panel takes the room the stack chips and links would use, so the card
+   never grows past the viewport (on phones its end would otherwise slide under the dock). */
+.site:not(.is-fallback) #projects .project-note:has(.project-details[open]) :is(.project-stack, .project-meta, .project-details + *) { display: none; }
+.site:not(.is-fallback) #projects .project-note:has(.project-details[open]) > p { display: none; }
+.site:not(.is-fallback) #projects .project-details[open] dd { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 @media (max-width: 1000px) and (min-width: 760px) {
   .topbar nav { gap: var(--s-4); }
   .topbar nav small { display: none; }
@@ -561,14 +559,29 @@ h2 { font-size: var(--fs-h2); }
   .topbar nav small { display: none; }
   .topbar nav button.active span { color: var(--lamp); text-decoration: underline; text-underline-offset: 6px; }
   .topbar-contact { min-height: 40px; padding: 0 var(--s-3); font-size: var(--fs-meta); }
+  /* The bar is opaque here; this only softens its lower edge into the room. */
+  .site:not(.is-fallback) .topbar::before { inset: 100% 0 -24px; background: linear-gradient(rgb(15 25 32 / .9), transparent); }
   .scene-shade { background: linear-gradient(180deg, transparent 30%, rgb(15 25 32 / .2) 40%, rgb(15 25 32 / .93) 56%, rgb(15 25 32 / .98)); }
   .site[data-active="experience"] .scene-shade { background: linear-gradient(180deg, transparent 32%, rgb(15 25 32 / .12) 42%, rgb(15 25 32 / .92) 60%, var(--ink-900)); }
-  .site[data-active="projects"] .scene-shade { background: linear-gradient(0deg, var(--ink-900) 1%, rgb(15 25 32 / .93) 30%, rgb(15 25 32 / .06) 55%, transparent 70%); }
+  .site[data-active="projects"] .scene-shade { background: linear-gradient(0deg, var(--ink-900) 1%, rgb(15 25 32 / .93) 44%, rgb(15 25 32 / .7) 60%, transparent 76%); }
+  /* The desktop shades for these chapters darken the right edge; on a phone the card is below the room. The stack
+     card is about the same height on every phone and tablet, so its shade is sized in pixels and the language
+     boards above it stay lit. */
+  .site[data-active="stack"] .scene-shade { background: linear-gradient(0deg, rgb(15 25 32 / .97), rgb(15 25 32 / .93) 370px, rgb(15 25 32 / .4) 440px, transparent 530px); }
+  .site[data-active="contact"] .scene-shade { background: linear-gradient(180deg, transparent 30%, rgb(15 25 32 / .2) 40%, rgb(15 25 32 / .93) 56%, rgb(15 25 32 / .98)); }
   .room-caption, .progress-rail { display: none; }
   .chapter { align-items: flex-end; justify-content: flex-start; padding: 108px var(--gutter) 76px; }
   .chapter-card { width: 100%; max-height: 49dvh; padding: var(--s-1) var(--s-1) var(--s-1) 0; }
-  /* Same fixed top as on desktop, at the line where the lower-half card normally starts. */
-  .site:not(.is-fallback) #projects { align-items: flex-start; padding-top: max(108px, calc(51dvh - 76px)); }
+  /* Same fixed top as on desktop, at the line where the lower-half card normally starts, raised on shorter
+     phones so the whole card (about 470px) still ends above the dock. */
+  .site:not(.is-fallback) #projects { align-items: flex-start; padding-top: max(108px, min(calc(51dvh - 76px), calc(100dvh - 546px))); }
+  .site:not(.is-fallback) .project-tour { margin-bottom: var(--s-3); }
+  .site:not(.is-fallback) #projects .project-picker { margin-bottom: var(--s-3); }
+  .site:not(.is-fallback) #projects .project-details { margin: var(--s-2) 0 var(--s-3); }
+  .site:not(.is-fallback) #projects .project-meta { display: none; }
+  /* Its top is fixed, so an opened "Implementation & evidence" panel scrolls inside the card instead of running
+     under the dock. The inline padding keeps focus rings clear of the clip edge. */
+  .site:not(.is-fallback) #projects .chapter-card { width: calc(100% + 10px); max-height: 100%; margin-inline: -5px; padding-inline: 5px; overflow: hidden auto; }
   .project-tour .project-stack { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; mask-image: linear-gradient(90deg, black 85%, transparent); }
   .chapter-number { margin-bottom: var(--s-3); }
   h1 { margin-bottom: var(--s-3); }
@@ -583,7 +596,6 @@ h2 { font-size: var(--fs-h2); }
   .experience-story { margin-bottom: var(--s-2); }
   .chapter .experience-story p { margin: var(--s-2) 0; }
   .role-selector { display: none; }
-  .project-tour .project-note { padding-top: var(--s-3); }
   .chapter .project-note p { display: block; font-size: var(--fs-body); }
   .project-stack { margin-bottom: var(--s-3); }
   .text-link { display: none; }
@@ -634,10 +646,28 @@ h2 { font-size: var(--fs-h2); }
   .repo-grid { grid-template-columns: 1fr; }
   .resume-list { columns: 1; }
 }
+/* Short phones: the project card keeps its title, picker, details and links, and lets the description and the
+   stack chips go (both are inside "Implementation & evidence" and the reading view) so the desk stays in view. */
+@media (max-width: 759px) and (max-height: 700px) {
+  .site:not(.is-fallback) #projects { padding-top: max(108px, calc(100dvh - 446px)); }
+  .site:not(.is-fallback) #projects .project-note > p, .site:not(.is-fallback) #projects .project-stack { display: none; }
+}
+/* Phones held sideways: the room keeps the left of the frame and the card scrolls in the short column beside it. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .chapter { padding: 84px var(--gutter) 64px 0; }
+  .site:not(.is-fallback) .chapter-card { max-height: calc(100dvh - 148px); overflow: hidden auto; }
+  .chapter-number { margin-bottom: var(--s-3); }
+  h1 { font-size: 3rem; margin-bottom: var(--s-3); }
+  .chapter h2, #projects h2 { font-size: 2rem; margin-bottom: var(--s-3); }
+  .room-caption, .progress-rail { display: none; }
+}
+@media (max-height: 500px) and (orientation: landscape) and (max-width: 759px) {
+  .chapter { padding: 108px var(--gutter) 64px; }
+  .site:not(.is-fallback) .chapter-card, .site:not(.is-fallback) #achievements .chapter-card { max-height: calc(100dvh - 172px); overflow: hidden auto; }
+}
 @media (max-width: 760px) {
-  .contact-website { padding: 84px var(--gutter) var(--s-6); }
-  .contact-browser > span:last-child { display: none; }
-  .contact-web-body { display: block; padding-top: var(--s-6); }
+  .contact-website { padding: 112px var(--gutter) var(--s-6); }
+  .contact-web-body { display: block; padding-top: var(--s-4); }
   .contact-intro h2 { font-size: 3rem; }
   .contact-form { margin-top: var(--s-6); padding: var(--s-5); }
   .contact-form input, .contact-form textarea { font-size: 16px; }

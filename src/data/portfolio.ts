@@ -12,10 +12,12 @@ export interface CameraStop {
   mobileFov: number;
 }
 
+/** The portrait Achievements camera stays in front of the desk monitors' backs (z ≈ 1.03): any further back
+ * and the near plane cuts through the left monitor, drawing a grey band across the certificate. */
 export const cameraStops: CameraStop[] = [
   { id: "intro", label: "Profile", start: 0, position: [-4.60, 1.6, .45], mobilePosition: [-4.70, 1.55, .65], target: [-4.97, 1.43, -2.48], fov: 39, mobileFov: 52 },
   { id: "experience", label: "Experiences", start: .14, position: [-2.8, 1.86, 1.65], mobilePosition: [-2.43, 1.9, 3.0], target: [-2.42, 1.40, -2.35], mobileTarget: [-2.08, 1.40, -2.35], fov: 46, mobileFov: 76 },
-  { id: "achievements", label: "Achievements", start: .29, position: [1.20, 1.62, .78], mobilePosition: [1.35, 1.7, 1.06], target: [1.35, 1.45, -2.4], fov: 42, mobileFov: 54 },
+  { id: "achievements", label: "Achievements", start: .29, position: [1.20, 1.62, .78], mobilePosition: [1.35, 1.7, .82], target: [1.35, 1.45, -2.4], fov: 42, mobileFov: 58 },
   { id: "projects", label: "Projects", start: .43, position: [2.44, 1.65, 3.85], mobilePosition: [2.44, 2.6, 6.15], target: [2.44, .94, 1.10], mobileTarget: [2.44, 1.17, 1.10], fov: 44, mobileFov: 64 },
   { id: "stack", label: "Tech Stack", start: .70, position: [2.44, 1.65, 3.85], mobilePosition: [2.44, 2.6, 6.15], target: [2.44, .94, 1.10], mobileTarget: [2.44, 1.17, 1.10], fov: 44, mobileFov: 64 },
   { id: "contact", label: "Contact", start: .88, position: [2.45, 1.55, 2.85], mobilePosition: [2.45, 1.55, 2.85], target: [2.45, .99, 1.282], fov: 39, mobileFov: 48 },
@@ -37,7 +39,6 @@ export const profile = {
   email: "vassel.jgo@gmail.com",
   linkedin: "https://www.linkedin.com/in/vassel-goleyu",
   whatsapp: "https://wa.me/6287868918900",
-  whatsappDisplay: "0878 6891 8900",
   instagram: "https://www.instagram.com/vassel_goleyu/",
   github: "https://github.com/sellebeww",
 };

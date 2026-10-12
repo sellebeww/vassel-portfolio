@@ -400,7 +400,7 @@ export default function App() {
 
   const commands: PaletteCommand[] = useMemo(() => !paletteOpen ? [] : [
     ...cameraStops.map((stop, index) => ({ id: `go-${stop.id}`, group: "Go to", label: stop.label, hint: `Chapter ${index + 1}`, shortcut: String(index + 1), run: () => goTo(stop.id) })),
-    { id: "open-roles", group: "Open", label: "All university roles", hint: "Search and filter 10 roles", keywords: "experience search filter", run: () => openOverlay({ kind: "roles" }) },
+    { id: "open-roles", group: "Open", label: "All university roles", hint: `${experiences.length} roles, with photos`, keywords: "experience", run: () => openOverlay({ kind: "roles" }) },
     { id: "open-certificates", group: "Open", label: "All certificates", hint: "9 achievements", keywords: "achievements awards gallery", run: () => openOverlay({ kind: "certificates", initial: null }) },
     { id: "open-repos", group: "Open", label: "Projects on GitHub", hint: "Live repository archive", keywords: "projects repositories code source", run: () => openOverlay({ kind: "repos" }) },
     { id: "open-resume", group: "Open", label: "Résumé", hint: "Print or save as PDF", keywords: "cv resume curriculum download print pdf", run: () => openOverlay({ kind: "resume" }) },

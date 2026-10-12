@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { achievementField, achievementFields, achievements, developmentPractices, experienceFocuses, experiences, profile, techStack, type AchievementField, type Experience, type ExperienceFocus } from "./data/portfolio";
+import { achievementField, achievementFields, achievements, developmentPractices, experiences, profile, techStack, type AchievementField, type Experience } from "./data/portfolio";
 import { filterRepos, languageStats, timeAgo, type Repo } from "./lib/github";
 import { resumeText } from "./lib/resume";
 import type { RepoState } from "./useRepos";
@@ -80,7 +80,7 @@ export function ExperienceDetail({ item, initialPhoto = 0, onClose, onPhoto }: {
         </button>)}
       </div>}
       <p>{item.description}</p>
-      <ul className="tag-list"><li className="tag-focus">{item.focus}</li>{item.tags.map(tag => <li key={tag}>{tag}</li>)}</ul>
+      <ul className="tag-list"><li className="tag-focus">{item.focus}</li>{item.tags.filter(tag => tag !== item.focus).map(tag => <li key={tag}>{tag}</li>)}</ul>
     </Modal>
   );
 }
@@ -93,23 +93,16 @@ function Chips<T extends string>({ label, options, value, onChange, counts }: { 
 }
 
 export function AllExperiences({ onClose, onSelect }: { onClose: () => void; onSelect: (item: Experience) => void }) {
-  const [query, setQuery] = useState(""), [focus, setFocus] = useState<ExperienceFocus | null>(null);
-  const counts = useMemo(() => Object.fromEntries(experienceFocuses.map(name => [name, experiences.filter(item => item.focus === name).length])), []);
-  const shown = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return experiences.filter(item => (!focus || item.focus === focus) && (!needle || `${item.title} ${item.organization} ${item.description} ${item.tags.join(" ")} ${item.period}`.toLowerCase().includes(needle)));
-  }, [query, focus]);
   return (
     <Modal title="Experiences" onClose={onClose}>
       <div className="all-experiences">
-        {shown.map(item => (
+        {experiences.map(item => (
           <button key={item.id} onClick={() => onSelect(item)}>
             <img src={`/images/experience/${item.id}/${item.photos[0]}`} alt="" loading="lazy" />
             <span><small>{item.period} · {item.photos.length} {item.photos.length === 1 ? "photo" : "photos"}</small><b>{item.title}</b><em>{item.organization}</em></span>
           </button>
         ))}
       </div>
-      {!shown.length && <p className="empty-state">No role matches “{query}”. <button className="text-button" onClick={() => { setQuery(""); setFocus(null); }}>Clear filters</button></p>}
     </Modal>
   );
 }
