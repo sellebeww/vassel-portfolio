@@ -80,7 +80,7 @@ export default function ContactInterface({ surface, entered, onBack }: {
           <p className="contact-status" role="status">{status || (copied ? "Email address copied." : "")}</p>
         </form>
       </div>
-      <footer className="contact-web-footer"><span>© {new Date().getFullYear()} {profile.name}</span><button onClick={onBack}>← Back to the workspace</button><span>Made with care, after hours.</span></footer>
+      <footer className="contact-web-footer"><span>© {new Date().getFullYear()} {profile.name}</span><button onClick={onBack}>← Back to the workspace</button></footer>
     </div>
   </section>;
 }
