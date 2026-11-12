@@ -111,3 +111,20 @@ describe("capability", () => {
     expect(lightReason({ gpu: gpu("Adreno (TM) 730") })).toBeNull();
   });
 });
+
+describe("case studies", () => {
+  it("are unique, link a real repository and never carry an unsourced personal claim", async () => {
+    const { caseStudies } = await import("../../src/data/caseStudies");
+    expect(new Set(caseStudies.map(study => study.slug)).size).toBe(caseStudies.length);
+    for (const study of caseStudies) {
+      expect(study.limits.length, `${study.slug} must state its limits`).toBeGreaterThan(30);
+      expect(study.approach.length).toBeGreaterThan(0);
+      expect(study.role, `${study.slug}: role is TODO(vassel), do not invent it`).toBeUndefined();
+      if (study.demo) expect(study.demo).toMatch(/^https:\/\//);
+    }
+  });
+  it("round-trips the #case-studies address", () => {
+    expect(parseOverlay("#case-studies", [], 0)).toEqual({ kind: "cases" });
+    expect(overlayHash({ kind: "cases" })).toBe("#case-studies");
+  });
+});

@@ -785,3 +785,24 @@ html[data-reveal="on"] .is-fallback .language-bars li:not(.is-in) i::after { tra
 /* Close for an open project in the simple version: sticky inside the card, so it follows the scroll until the card ends. */
 .project-close { position: sticky; top: 88px; z-index: 5; align-self: flex-end; flex: none; height: 36px; margin: 0 0 -36px; padding: 0 var(--s-3); border: 1px solid var(--lamp-line); border-radius: var(--r-pill); background: var(--veil); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--lamp); font: 500 var(--fs-small)/34px var(--font-sans); cursor: pointer; }
 .project-close:hover { background: var(--lamp); color: var(--ink-950); }
+
+/* Case studies: the quick-read index, and the long-form cards used in the dialog and the simple version. */
+.case-section { margin: 0 0 var(--s-6); }
+.case-section > h3, .project-grid-heading { margin: 0 0 var(--s-2); font: 400 clamp(1.5rem, 1.2rem + 1vw, 2rem)/1.1 var(--font-display); letter-spacing: -.02em; }
+.project-grid-heading { margin-top: var(--s-6); }
+.case-list { display: grid; gap: var(--s-5); margin-top: var(--s-4); }
+.case-study { padding: var(--s-4) 0 var(--s-5); border-top: 1px solid var(--line-strong); }
+.case-study h3, .case-study h4 { margin: 0 0 var(--s-1); font: 400 clamp(1.5rem, 1.2rem + 1vw, 2.1rem)/1.1 var(--font-display); letter-spacing: -.02em; }
+.case-status { margin: 0 0 var(--s-2); color: var(--lamp); font-size: var(--fs-label); letter-spacing: .04em; text-transform: uppercase; }
+.case-tagline { margin: 0 0 var(--s-3); color: var(--text-1); font-size: var(--fs-body, 1rem); line-height: 1.55; }
+.case-facts { display: grid; gap: var(--s-3); margin: 0 0 var(--s-3); }
+.case-facts dt { margin: 0 0 4px; color: var(--text-3, var(--text-2)); font-size: var(--fs-label); letter-spacing: .06em; text-transform: uppercase; }
+.case-facts dd { margin: 0; color: var(--text-2); font-size: var(--fs-small); line-height: 1.6; }
+.case-facts ul { margin: 0; padding-left: 1.1em; }
+.case-facts li + li { margin-top: 4px; }
+.case-index { display: grid; gap: 2px; margin: 0 0 var(--s-4); padding: 0; list-style: none; }
+.case-index a { display: grid; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--line); color: var(--text-1); text-decoration: none; }
+.case-index a:hover b, .case-index a:focus-visible b { color: var(--lamp); }
+.case-index b { font-weight: 500; }
+.case-index span { color: var(--text-2); font-size: var(--fs-small); line-height: 1.5; }
+@media (min-width: 900px) { .case-facts { grid-template-columns: 1fr 1fr; } }

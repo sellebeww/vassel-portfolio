@@ -7,11 +7,12 @@ export type Overlay =
   | { kind: "certificates"; initial: number | null }
   | { kind: "project" }
   | { kind: "repos" }
+  | { kind: "cases" }
   | { kind: "resume" };
 
 const int = (value: string | undefined) => { const n = Number(value); return Number.isInteger(n) ? n : NaN; };
 
-/** `#role/<id>[/<photo>]`, `#certificate/<n>`, `#roles`, `#certificates`, `#project`, `#repos`, `#resume`.
+/** `#role/<id>[/<photo>]`, `#certificate/<n>`, `#roles`, `#certificates`, `#project`, `#repos`, `#case-studies`, `#resume`.
  * Photos and certificates are 1-based in the address; indexes are 0-based in the app. */
 export function parseOverlay(hash: string, roleIds: readonly string[], certificateCount: number, photoCounts: Record<string, number> = {}): Overlay | null {
   const [head, a, b] = hash.replace(/^#/, "").split("/");
@@ -29,6 +30,7 @@ export function parseOverlay(hash: string, roleIds: readonly string[], certifica
     case "certificates": return { kind: "certificates", initial: null };
     case "project": return { kind: "project" };
     case "repos": return { kind: "repos" };
+    case "case-studies": return { kind: "cases" };
     case "resume": return { kind: "resume" };
     default: return null;
   }
@@ -41,6 +43,7 @@ export function overlayHash(overlay: Overlay): string {
     case "roles": return "#roles";
     case "project": return "#project";
     case "repos": return "#repos";
+    case "cases": return "#case-studies";
     case "resume": return "#resume";
   }
 }
@@ -50,7 +53,7 @@ export function overlayChapter(overlay: Overlay): ChapterId | null {
   switch (overlay.kind) {
     case "role": case "roles": return "experience";
     case "certificates": return "achievements";
-    case "project": case "repos": return "projects";
+    case "project": case "repos": case "cases": return "projects";
     case "resume": return null;
   }
 }
