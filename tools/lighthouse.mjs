@@ -12,7 +12,7 @@ const out = `docs/perf/${label}.json`;
 mkdirSync("docs/perf", { recursive: true });
 const run = spawnSync("npx", ["--yes", "lighthouse@12", url,
   "--chrome-flags=--headless=new --no-sandbox", "--only-categories=performance,accessibility,best-practices,seo",
-  "--output=json", `--output-path=${out}`, "--quiet"], { stdio: "inherit", env: { ...process.env, CHROME_PATH: chromium.executablePath() } });
+  "--protocol-timeout=180000", "--max-wait-for-load=120000", "--output=json", `--output-path=${out}`, "--quiet"], { stdio: "inherit", env: { ...process.env, CHROME_PATH: chromium.executablePath() } });
 if (run.status !== 0) process.exit(run.status ?? 1);
 const report = JSON.parse(readFileSync(out, "utf8")), audit = id => report.audits[id];
 const summary = {
