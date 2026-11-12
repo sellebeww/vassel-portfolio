@@ -208,6 +208,7 @@ export function Resume({ repos, onClose }: { repos: Repo[]; onClose: () => void 
         <p className="resume-role">{profile.role} · {profile.location}</p>
         <p className="resume-contact">{profile.email} · <a href={profile.github} target="_blank" rel="noreferrer">{profile.github.replace("https://", "")}</a> · <a href={profile.linkedin} target="_blank" rel="noreferrer">{profile.linkedin.replace("https://www.", "")}</a></p>
         <div className="resume-actions no-print">
+          <a className="text-button" href="/CV_Vassel_Goleyu.pdf" download>Download CV (PDF) <span>↓</span></a>
           <button className="text-button" onClick={() => window.print()}>Print / Save as PDF <span>↗</span></button>
           <button className="text-button" onClick={copy}>{copied ? "Copied ✓" : "Copy as text"} <span>⧉</span></button>
         </div>

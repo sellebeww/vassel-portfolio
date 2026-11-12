@@ -371,7 +371,7 @@ export default function App() {
     { id: "open-roles", group: "Open", label: "All university roles", hint: `${experiences.length} roles, with photos`, keywords: "experience", run: () => openOverlay({ kind: "roles" }) },
     { id: "open-certificates", group: "Open", label: "All certificates", hint: "9 achievements", keywords: "achievements awards gallery", run: () => openOverlay({ kind: "certificates", initial: null }) },
     { id: "open-repos", group: "Open", label: "Projects on GitHub", hint: "Live repository archive", keywords: "projects repositories code source", run: () => openOverlay({ kind: "repos" }) },
-    { id: "open-resume", group: "Open", label: "Résumé", hint: "Print or save as PDF", keywords: "cv resume curriculum download print pdf", run: () => openOverlay({ kind: "resume" }) },
+    { id: "open-resume", group: "Open", label: "Résumé", hint: "Download CV, print or save as PDF", keywords: "cv resume curriculum download print pdf", run: () => openOverlay({ kind: "resume" }) },
     ...(ambience.current?.supported ? [{ id: "room-sound", group: "Room", label: `Music ${soundOn ? "off" : "on"}`, hint: "Chill jazz, synthesised live in your browser", shortcut: "S", keywords: "audio music mute volume", run: onToggleSound }] : []),
     { id: "contact-copy", group: "Contact", label: "Copy email address", hint: profile.email, keywords: "mail clipboard", run: copyEmail },
     { id: "contact-mail", group: "Contact", label: "Write an email", hint: "Opens your mail app", keywords: "mailto message", run: () => { window.location.href = `mailto:${profile.email}`; } },
