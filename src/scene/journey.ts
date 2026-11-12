@@ -37,13 +37,16 @@ type Frame = { at: number; position: V3; target: V3; fov: number; offset: number
  * the horizontal half-width it must show (tan(fov/2) * aspect) stays at what the 44° view shows on a 1.44 window. */
 const DESK_HALF_WIDTH = Math.tan(22 * Math.PI / 180) * 1.44;
 export const deskFov = (aspect: number) => clamp(2 * Math.atan(DESK_HALF_WIDTH / aspect) * 180 / Math.PI, 40, 44);
+/** Same idea for the certificate case: on a squarer window the 42° view would crop the case, so the lens widens (up to 62°). */
+const CASE_HALF_WIDTH = Math.tan(21 * Math.PI / 180) * 1.44;
+export const caseFov = (aspect: number) => clamp(2 * Math.atan(CASE_HALF_WIDTH / aspect) * 180 / Math.PI, 42, 62);
 
 export function journeyFrames(mobile: boolean, aspect = 1.44): Frame[] {
   const frames: Frame[] = [];
   for (const stop of cameraStops.slice(0, 4)) {
     const frame = { at: stop.start, position: mobile ? stop.mobilePosition : stop.position,
       target: mobile && stop.mobileTarget ? stop.mobileTarget : stop.target,
-      fov: mobile ? stop.mobileFov : stop.id === "projects" ? deskFov(aspect) : stop.fov, offset: mobile ? 0 : stop.id === "projects" ? .065 : .18, vertical: mobile ? (stop.id === "intro" ? .15 : .19) : 0 };
+      fov: mobile ? stop.mobileFov : stop.id === "projects" ? deskFov(aspect) : stop.id === "achievements" ? caseFov(aspect) : stop.fov, offset: mobile ? 0 : stop.id === "projects" ? .065 : .18, vertical: mobile ? (stop.id === "intro" ? .15 : .19) : 0 };
     frames.push(frame);
     const hold = stop.id === "intro" ? .078 : stop.id === "experience" ? .228 : stop.id === "achievements" ? .365 : .473;
     frames.push({ ...frame, at: hold });

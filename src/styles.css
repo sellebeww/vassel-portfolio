@@ -107,13 +107,20 @@ kbd { font: 500 var(--fs-label)/1 var(--font-sans); padding: 4px 6px; border: 1p
 .loading-room.is-done .loading-inner { transform: translateY(-16px); opacity: 0; }
 .loading-name { margin: 0; font: 400 clamp(2.75rem, 1.8rem + 4vw, 4.75rem)/.95 var(--font-display); letter-spacing: -.025em; animation: rise 1100ms var(--ease-out) both; }
 .loading-name em, h1 em, .contact-intro h2 em { font-style: italic; color: var(--lamp); }
-.loading-meter { height: 1px; overflow: hidden; background: var(--line); }
-.loading-meter span { display: block; height: 100%; background: var(--lamp); transform-origin: 0 50%; transition: transform 240ms linear; }
+.loading-room::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 46%, rgb(240 191 148 / .16), transparent 70%); animation: lamp-breathe 3.6s ease-in-out infinite; pointer-events: none; }
+.loading-inner { position: relative; }
+.loading-kicker, .loading-role { margin: 0; font: 500 var(--fs-meta)/1.4 var(--font-sans); letter-spacing: .18em; text-transform: uppercase; color: var(--text-3); animation: rise 900ms var(--ease-out) both; }
+.loading-role { letter-spacing: .04em; text-transform: none; font-size: var(--fs-small); color: var(--text-2); animation-delay: 200ms; }
+.loading-name em { background: linear-gradient(100deg, var(--lamp) 30%, #fff3df 50%, var(--lamp) 70%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: name-shine 3.2s ease-in-out infinite; }
+.loading-meter { height: 3px; border-radius: 2px; background: var(--line); overflow: visible; }
+.loading-meter span { display: block; height: 100%; border-radius: 2px; background: var(--lamp); box-shadow: 0 0 14px rgb(240 191 148 / .55); transform-origin: 0 50%; transition: transform 240ms linear; }
 .loading-sub { font: 400 var(--fs-meta)/1.4 var(--font-sans); color: var(--text-3); }
 .loading-sub b { font-weight: 400; color: var(--text-1); font-variant-numeric: tabular-nums; }
 .loading-slow { display: block; color: var(--text-2); font-size: var(--fs-small); }
 .loading-slow button { padding: 0; border: 0; background: none; color: var(--lamp); font: inherit; text-decoration: underline; text-decoration-color: var(--lamp-line); text-underline-offset: 3px; }
 .loading-slow button:hover { color: var(--text-1); }
+@keyframes lamp-breathe { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes name-shine { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
 /* ── Chrome: top bar, progress, wayfinding, dock ───────────────────────── */
@@ -121,12 +128,12 @@ kbd { font: 500 var(--fs-label)/1 var(--font-sans); padding: 4px 6px; border: 1p
 /* The links sit over the 3D room, which is bright where the monitors or a certificate pass behind them. */
 .site:not(.is-fallback) .topbar::before { content: ""; position: absolute; z-index: -1; inset: 0 0 -32px; pointer-events: none; background: linear-gradient(180deg, rgb(10 17 23 / .86), rgb(10 17 23 / .66) 55%, transparent); }
 .site[data-contact="inside"] .topbar::before { display: none; }
-.wordmark { justify-self: start; border: 0; padding: var(--s-2) 0; background: none; font: 600 1.375rem/1 var(--font-sans); letter-spacing: -.06em; transition: color var(--dur-1); }
+.wordmark { justify-self: start; min-width: 44px; min-height: 44px; border: 0; padding: var(--s-2) 0; background: none; font: 600 1.375rem/1 var(--font-sans); letter-spacing: -.06em; transition: color var(--dur-1); }
 .wordmark span { color: var(--lamp); }
 .wordmark:hover { color: var(--lamp-strong); }
 .topbar nav { position: relative; display: flex; justify-content: center; gap: var(--s-5); }
 .topbar nav button { display: flex; align-items: baseline; gap: 6px; padding: var(--s-3) 0; border: 0; border-bottom: 1px solid transparent; background: none; color: var(--text-3); font-size: var(--fs-small); transition: color var(--dur-1), border-color var(--dur-2) var(--ease-out); }
-.topbar nav small { font: 400 var(--fs-label)/1 var(--font-sans); opacity: .8; }
+.topbar nav button::before { content: attr(data-n); font: 400 var(--fs-label)/1 var(--font-sans); opacity: .8; }
 .topbar nav button:hover { color: var(--text-1); }
 .topbar nav button.active { color: var(--text-1); border-color: var(--lamp); }
 .topbar nav button.active span { color: var(--lamp); opacity: 1; }
@@ -134,8 +141,9 @@ kbd { font: 500 var(--fs-label)/1 var(--font-sans); padding: 4px 6px; border: 1p
 .topbar-contact span { color: var(--lamp); transition: transform var(--dur-2) var(--ease-out); }
 .topbar-contact:hover { background: var(--lamp); border-color: var(--lamp); color: var(--ink-950); }
 .topbar-contact:hover span { color: var(--ink-950); transform: translate(2px, -2px); }
-.progress-rail { position: fixed; z-index: 4; left: var(--gutter); top: 32%; width: 1px; height: 36%; background: var(--line-strong); }
-.progress-rail span { display: block; width: 1px; height: calc(var(--journey, 0) * 100%); background: var(--lamp); }
+/* Scroll progress: a thin bar along the very top of the screen that fills with the scroll position. */
+.progress-rail { position: fixed; z-index: 25; left: 0; right: 0; top: 0; height: 3px; background: rgb(239 233 223 / .08); pointer-events: none; }
+.progress-rail span { display: block; height: 100%; transform-origin: left center; transform: scaleX(var(--journey, 0)); background: var(--lamp); box-shadow: 0 0 10px rgb(240 191 148 / .55); will-change: transform; }
 .room-caption { position: fixed; z-index: 4; bottom: 26px; left: var(--gutter); right: var(--gutter); display: flex; justify-content: space-between; align-items: center; color: var(--text-3); font: 400 var(--fs-label)/1 var(--font-sans); letter-spacing: var(--track-label); text-transform: uppercase; pointer-events: none; }
 .room-caption i { margin-left: var(--s-2); font-style: normal; display: inline-block; }
 /* The cue nudges three times on arrival, then rests: a hint, not a loop that runs (and costs a style pass per frame) forever. */
@@ -144,11 +152,11 @@ kbd { font: 500 var(--fs-label)/1 var(--font-sans); padding: 4px 6px; border: 1p
 .site[data-active="intro"] .scroll-cue { opacity: 1; }
 @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
 .live-dot { display: inline-block; width: 5px; height: 5px; margin-right: var(--s-2); border-radius: 50%; background: var(--lamp); box-shadow: 0 0 10px var(--lamp); vertical-align: 1px; }
-.dock { position: fixed; z-index: 21; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; width: max-content; max-width: calc(100vw - 2 * var(--gutter)); gap: var(--s-1); padding: var(--s-1); border-radius: var(--r-2); background: var(--veil); backdrop-filter: blur(6px); }
+.dock { position: fixed; z-index: 21; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; width: max-content; max-width: calc(100vw - 2 * var(--gutter)); gap: var(--s-1); padding: var(--s-1); border-radius: var(--r-2); background: var(--veil); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .dock button { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 40px; white-space: nowrap; padding: 0 var(--s-3); border: 0; border-radius: var(--r-pill); background: none; color: var(--text-2); font-size: var(--fs-meta); transition: background var(--dur-1), color var(--dur-1); }
 .dock button:hover { background: var(--lamp-wash); color: var(--text-1); }
 .dock button[aria-pressed="true"] { color: var(--lamp); }
-.dock kbd { padding: 3px 5px; }
+.dock-menu::before { content: attr(data-key); padding: 3px 5px; border: 1px solid var(--line-strong); border-radius: var(--r-1); background: var(--ink-800); color: var(--text-2); font: 500 var(--fs-label)/1 var(--font-sans); }
 .site[data-contact="inside"] .dock { visibility: hidden; }
 .toast { position: fixed; z-index: 120; left: 50%; bottom: 68px; transform: translate(-50%, 8px); padding: var(--s-2) var(--s-4); border: 1px solid var(--line-strong); border-radius: var(--r-pill); background: var(--ink-800); color: var(--text-1); font-size: var(--fs-small); opacity: 0; pointer-events: none; box-shadow: var(--shadow-1); transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
 .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
@@ -162,7 +170,7 @@ main { position: relative; z-index: 3; pointer-events: none; }
 .chapter { position: fixed; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding: 96px var(--gutter) 72px 0; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity var(--dur-2) var(--ease-in), visibility 0s linear var(--dur-2); }
 .chapter.is-active { visibility: visible; opacity: 1; transition: opacity var(--dur-2) var(--ease-out), visibility 0s; }
 /* Cards are sized to fit; if a short window still runs out of room, the card scrolls rather than cutting its end off. */
-.chapter-card { width: min(420px, 34vw); max-height: calc(100dvh - 168px); overflow: hidden auto; overscroll-behavior: contain; scrollbar-width: thin; padding: var(--s-1) var(--s-2) var(--s-1) 0; pointer-events: none; }
+.chapter-card { width: min(26.25rem, 34vw); max-height: calc(100dvh - 168px); overflow: hidden auto; overscroll-behavior: contain; scrollbar-width: thin; padding: var(--s-1) var(--s-2) var(--s-1) 0; pointer-events: none; }
 .chapter.is-active .chapter-card { pointer-events: auto; }
 /* Staggered arrival: each block of the card lands 70 ms after the one above it, on a long expo-out.
    Leaving is quicker and un-staggered, so a fast scroll never stacks two cards. Before the room is
@@ -276,7 +284,7 @@ h2 { font-size: var(--fs-h2); }
 .project-facts div { display: grid; grid-template-columns: 56px 1fr; gap: var(--s-2); font-size: var(--fs-small); }
 .project-facts dt { color: var(--text-3); font: 500 var(--fs-label)/1.8 var(--font-sans); text-transform: uppercase; letter-spacing: var(--track-label); }
 .project-facts dd { margin: 0; color: var(--text-2); line-height: 1.55; }
-.project-facts dd a { display: inline-block; margin-top: 4px; color: var(--lamp); text-underline-offset: 3px; }
+.project-facts dd a { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; color: var(--lamp); text-underline-offset: 3px; }
 .project-stack { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 var(--s-4); padding: 0; list-style: none; }
 .project-stack li { padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-pill); color: var(--text-2); font-size: var(--fs-label); line-height: 1.3; white-space: nowrap; }
 /* Both destinations are the same size of button; the live demo, when there is one, is the filled one. */
@@ -323,8 +331,12 @@ h2 { font-size: var(--fs-h2); }
   #projects .project-note h3 { font-size: 1.75rem; }
 }
 
+/* Large displays: type and the card scale together so the text keeps its proportion to the room. */
+@media (min-width: 1900px) { html { font-size: 112.5%; } }
+@media (min-width: 2400px) { html { font-size: 137.5%; } }
+
 /* ── Dialogs ───────────────────────────────────────────────────────────── */
-.modal-shell { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: var(--s-4); background: rgb(10 17 23 / .8); backdrop-filter: blur(8px); animation: fade-in var(--dur-2) var(--ease-out); }
+.modal-shell { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: var(--s-4); background: rgb(10 17 23 / .8); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: fade-in var(--dur-2) var(--ease-out); }
 .modal { width: min(940px, 100%); max-height: 90dvh; overflow: auto; padding: clamp(var(--s-5), 4vw, 44px); border: 1px solid var(--line); border-radius: var(--r-2); background: var(--ink-800); color: var(--text-1); box-shadow: var(--shadow-2); animation: modal-in 500ms var(--ease-out); }
 .modal.is-wide { width: min(1040px, 100%); }
 .modal header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-5); }
@@ -425,7 +437,7 @@ h2 { font-size: var(--fs-h2); }
 /* ── Contact: one live page, projected onto the laptop and then full screen ─ */
 .site[data-active="contact"] .chapter-card { opacity: calc(1 - min(1, var(--screen-entry, 0) * 4)); }
 .site[data-contact="inside"] #contact { visibility: hidden; pointer-events: none; }
-.site[data-contact="inside"] .scene-layer, .site[data-contact="inside"] .scene-shade, .site[data-contact="inside"] .grain, .site[data-contact="inside"] .room-caption, .site[data-contact="inside"] .progress-rail { visibility: hidden; }
+.site[data-contact="inside"] .scene-layer, .site[data-contact="inside"] .scene-shade, .site[data-contact="inside"] .grain, .site[data-contact="inside"] .room-caption { visibility: hidden; }
 .contact-portal { position: fixed; z-index: 8; inset: 0; width: 100vw; height: 100dvh; overflow: hidden; transform-origin: 0 0; background: var(--ink-900); color: var(--text-1); visibility: hidden; opacity: 0; pointer-events: none; will-change: transform; }
 .contact-portal[data-entered="true"] { overflow-y: auto; pointer-events: auto; will-change: auto; }
 .contact-website { min-height: 100%; padding: 100px max(5vw, 24px) var(--s-5); background: radial-gradient(70% 60% at 0% 30%, rgb(240 191 148 / .06), transparent 70%), var(--ink-900); }
@@ -440,14 +452,14 @@ h2 { font-size: var(--fs-h2); }
 .contact-person strong { font-size: var(--fs-small); font-weight: 500; }
 .contact-person div > span, .contact-person small { margin-top: 2px; color: var(--text-3); font-size: var(--fs-meta); }
 .contact-address { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3); margin-top: var(--s-5); padding: var(--s-4) 0; border-block: 1px solid var(--line); }
-.contact-address a { color: var(--lamp); font-size: clamp(1rem, .85rem + .6vw, 1.25rem); text-decoration: none; transition: color var(--dur-1); }
+.contact-address a { display: inline-flex; align-items: center; min-height: 44px; color: var(--lamp); font-size: clamp(1rem, .85rem + .6vw, 1.25rem); text-decoration: none; transition: color var(--dur-1); }
 .contact-address a:hover { color: var(--lamp-strong); }
 .contact-address a span { display: inline-block; margin-left: var(--s-3); transition: transform var(--dur-2) var(--ease-out); }
 .contact-address a:hover span { transform: translate(2px, -2px); }
-.contact-address button { min-height: 32px; padding: 0 var(--s-3); border: 1px solid var(--line-strong); border-radius: var(--r-1); background: transparent; color: var(--text-2); font-size: var(--fs-meta); transition: border-color var(--dur-1), color var(--dur-1); }
+.contact-address button { min-height: 44px; padding: 0 var(--s-3); border: 1px solid var(--line-strong); border-radius: var(--r-1); background: transparent; color: var(--text-2); font-size: var(--fs-meta); transition: border-color var(--dur-1), color var(--dur-1); }
 .contact-address button:hover { border-color: var(--lamp-line); color: var(--text-1); }
 .contact-socials { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-6); margin-top: var(--s-4); }
-.contact-socials a { color: var(--text-1); font-size: var(--fs-small); text-decoration: none; transition: color var(--dur-1); }
+.contact-socials a { display: inline-flex; align-items: center; min-height: 44px; color: var(--text-1); font-size: var(--fs-small); text-decoration: none; transition: color var(--dur-1); }
 .contact-socials a:hover { color: var(--lamp); }
 .contact-socials span { margin-left: var(--s-2); color: var(--lamp); }
 .contact-form { padding: clamp(var(--s-5), 3vw, 40px); border: 1px solid var(--line); border-radius: var(--r-2); background: rgb(239 233 223 / .02); box-shadow: var(--shadow-1); }
@@ -464,19 +476,19 @@ h2 { font-size: var(--fs-h2); }
 .compose-email:hover span { transform: translate(2px, -2px); }
 .compose-email:active { transform: scale(.99); }
 .contact-form > small { display: block; margin-top: var(--s-3); color: var(--text-3); font-size: var(--fs-meta); line-height: 1.5; }
-.contact-form .copy-message { display: block; margin: var(--s-3) 0 0; padding: var(--s-1) 0; border: 0; border-bottom: 1px solid var(--line-strong); background: none; color: var(--text-2); font-size: var(--fs-meta); transition: color var(--dur-1), border-color var(--dur-1); }
+.contact-form .copy-message { display: block; min-height: 44px; margin: var(--s-3) 0 0; padding: var(--s-1) 0; border: 0; border-bottom: 1px solid var(--line-strong); background: none; color: var(--text-2); font-size: var(--fs-meta); transition: color var(--dur-1), border-color var(--dur-1); }
 .contact-form .copy-message:hover { color: var(--text-1); border-color: var(--lamp); }
 .contact-status { min-height: 16px; margin: var(--s-3) 0 0; color: var(--text-2); font-size: var(--fs-meta); line-height: 1.6; }
 .contact-web-footer { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); margin-top: var(--s-3); padding-top: var(--s-5); border-top: 1px solid var(--line); color: var(--text-3); font: 400 var(--fs-label)/1.4 var(--font-sans); }
-.contact-web-footer button { padding: var(--s-2) 0; border: 0; background: none; color: var(--lamp); font: var(--fs-meta) var(--font-sans); transition: color var(--dur-1); }
+.contact-web-footer button { min-height: 44px; padding: var(--s-2) 0; border: 0; background: none; color: var(--lamp); font: var(--fs-meta) var(--font-sans); transition: color var(--dur-1); }
 .contact-web-footer button:hover { color: var(--lamp-strong); }
 
 /* ── Reading view (and no-WebGL): the same content as one calm column ─────
    Every chapter shares one measure and one rhythm; showcases that rotate in the room become
    grids here (all certificates, all projects) so the page can be read at the visitor's pace. */
 .is-fallback.site { height: auto; padding-bottom: var(--s-8); background: radial-gradient(80% 50% at 90% 0%, rgb(240 191 148 / .07), transparent 70%), var(--ink-900); }
-.is-fallback .topbar { position: sticky; background: var(--veil); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-.is-fallback .room-caption, .is-fallback .progress-rail { display: none; }
+.is-fallback .topbar { position: sticky; background: var(--veil); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.is-fallback .room-caption { display: none; }
 .is-fallback .chapter { position: relative; display: block; padding: var(--s-8) var(--gutter) 0; visibility: visible; opacity: 1; scroll-margin-top: 76px; }
 .is-fallback .chapter-card { width: min(760px, 100%); max-height: none; margin: 0 auto; overflow: visible; padding: 0 0 var(--s-8); border-bottom: 1px solid var(--line); pointer-events: auto; }
 .is-fallback .chapter-card > * { opacity: 1; transform: none; transition: none; }
@@ -539,7 +551,7 @@ h2 { font-size: var(--fs-h2); }
 .site:not(.is-fallback) #projects .project-details[open] dd { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 @media (max-width: 1000px) and (min-width: 760px) {
   .topbar nav { gap: var(--s-4); }
-  .topbar nav small { display: none; }
+  .topbar nav button::before { display: none; }
   .chapter-card { width: 38vw; }
 }
 @media (max-height: 720px) and (min-width: 1001px) {
@@ -556,7 +568,7 @@ h2 { font-size: var(--fs-h2); }
   .topbar nav { grid-column: 1 / -1; grid-row: 2; width: 100%; justify-content: flex-start; gap: var(--s-5); overflow-x: auto; scrollbar-width: none; mask-image: linear-gradient(90deg, transparent, black 8px, black calc(100% - 8px), transparent); }
   .topbar nav button { flex: none; min-height: 44px; align-items: center; justify-content: center; padding: 0; border: 0; }
   .topbar nav span { display: inline; font-size: var(--fs-small); }
-  .topbar nav small { display: none; }
+  .topbar nav button::before { display: none; }
   .topbar nav button.active span { color: var(--lamp); text-decoration: underline; text-underline-offset: 6px; }
   .topbar-contact { min-height: 40px; padding: 0 var(--s-3); font-size: var(--fs-meta); }
   /* The bar is opaque here; this only softens its lower edge into the room. */
@@ -567,9 +579,9 @@ h2 { font-size: var(--fs-h2); }
   /* The desktop shades for these chapters darken the right edge; on a phone the card is below the room. The stack
      card is about the same height on every phone and tablet, so its shade is sized in pixels and the language
      boards above it stay lit. */
-  .site[data-active="stack"] .scene-shade { background: linear-gradient(0deg, rgb(15 25 32 / .97), rgb(15 25 32 / .93) 370px, rgb(15 25 32 / .4) 440px, transparent 530px); }
+  .site[data-active="stack"] .scene-shade { background: linear-gradient(0deg, rgb(15 25 32 / .97), rgb(15 25 32 / .93) 480px, rgb(15 25 32 / .4) 540px, transparent 620px); }
   .site[data-active="contact"] .scene-shade { background: linear-gradient(180deg, transparent 30%, rgb(15 25 32 / .2) 40%, rgb(15 25 32 / .93) 56%, rgb(15 25 32 / .98)); }
-  .room-caption, .progress-rail { display: none; }
+  .room-caption { display: none; }
   .chapter { align-items: flex-end; justify-content: flex-start; padding: 108px var(--gutter) 76px; }
   .chapter-card { width: 100%; max-height: 49dvh; padding: var(--s-1) var(--s-1) var(--s-1) 0; }
   /* Same fixed top as on desktop, at the line where the lower-half card normally starts, raised on shorter
@@ -639,7 +651,7 @@ h2 { font-size: var(--fs-h2); }
   .project-grid { grid-template-columns: 1fr; }
   .dock { left: auto; right: 12px; bottom: max(10px, env(safe-area-inset-bottom)); transform: none; padding: 2px; }
   .dock button { min-height: 44px; padding: 0 var(--s-3); }
-  .dock kbd { display: none; }
+  .dock-menu::before { display: none; }
   .toast { bottom: 60px; max-width: 86vw; text-align: center; }
   .palette-shell { padding-top: 8vh; }
   .palette footer span:last-child { display: none; }
@@ -659,7 +671,7 @@ h2 { font-size: var(--fs-h2); }
   .chapter-number { margin-bottom: var(--s-3); }
   h1 { font-size: 3rem; margin-bottom: var(--s-3); }
   .chapter h2, #projects h2 { font-size: 2rem; margin-bottom: var(--s-3); }
-  .room-caption, .progress-rail { display: none; }
+  .room-caption { display: none; }
 }
 @media (max-height: 500px) and (orientation: landscape) and (max-width: 759px) {
   .chapter { padding: 108px var(--gutter) 64px; }
@@ -691,3 +703,84 @@ h2 { font-size: var(--fs-h2); }
   .resume h3 { color: #333 !important; border-color: #bbb !important; }
   .modal a { color: #111 !important; text-decoration: none; }
 }
+
+/* ══ Choosing a version, and the simple version ═════════════════════════════
+   The loader offers the simple version from the first second. The simple version is the same content as the room, laid out
+   for reading: wider on large screens, filterable projects, and blocks that rise in as they scroll into view. */
+.loading-choice { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-4); margin-top: var(--s-3); padding-top: var(--s-4); border-top: 1px solid var(--line); color: var(--text-3); font: 400 var(--fs-small)/1.4 var(--font-sans); opacity: 0; animation: choice-in 700ms var(--ease-out) 1s forwards; }
+.loading-choice.is-slow span { color: var(--text-1); }
+.loading-choice button { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; padding: 0 var(--s-4); border: 1px solid var(--lamp-line); border-radius: var(--r-pill); background: var(--lamp-wash); color: var(--lamp); font: 500 var(--fs-small)/1 var(--font-sans); cursor: pointer; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out); }
+.loading-choice button i { font-style: normal; transition: transform var(--dur-2) var(--ease-out); }
+.loading-choice button:hover { background: var(--lamp); color: var(--ink-950); }
+.loading-choice button:hover i { transform: translateX(3px); }
+@keyframes choice-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fallback-notice button { padding: 0; border: 0; background: none; color: var(--lamp); font: inherit; text-decoration: underline; text-decoration-color: var(--lamp-line); text-underline-offset: 3px; cursor: pointer; }
+.fallback-notice button:hover { color: var(--text-1); }
+
+/* Language bars: the same figures as before, as proportions you can compare at a glance. */
+.language-bars { display: grid; gap: 10px; margin: var(--s-5) 0 0; padding: 0; list-style: none; }
+.language-bars li { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 2ch; align-items: center; gap: var(--s-3); color: var(--text-1); font-size: var(--fs-small); }
+.language-bars i { position: relative; height: 6px; overflow: hidden; border-radius: var(--r-pill); background: var(--line); }
+.language-bars i::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--lamp) 45%, transparent), var(--lamp)); transform: scaleX(var(--share, 1)); transform-origin: 0 50%; transition: transform 900ms var(--ease-out); }
+.language-bars small { color: var(--lamp); font: 400 var(--fs-label)/1 var(--font-sans); font-variant-numeric: tabular-nums; text-align: right; }
+.site:not(.is-fallback) .language-bars { gap: 7px; margin-top: var(--s-3); }
+.site:not(.is-fallback) .language-bars li { grid-template-columns: 4.8rem minmax(0, 1fr) 2ch; gap: var(--s-2); font-size: var(--fs-meta); }
+
+.filter-row { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-5) 0 0; }
+.filter-row button { display: inline-flex; align-items: baseline; gap: var(--s-2); min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: var(--r-pill); background: transparent; color: var(--text-2); font: 400 var(--fs-small)/40px var(--font-sans); cursor: pointer; transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out); }
+.filter-row button small { color: var(--text-3); font-size: var(--fs-label); }
+.filter-row button:hover { border-color: var(--lamp-line); color: var(--text-1); }
+.filter-row button[aria-pressed="true"] { border-color: var(--lamp); background: var(--lamp); color: var(--ink-950); }
+.filter-row button[aria-pressed="true"] small { color: inherit; opacity: .7; }
+.show-more { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; margin: 0 0 var(--s-5); border: 1px dashed var(--line-strong); border-radius: var(--r-2); background: transparent; color: var(--text-1); font: 500 var(--fs-small)/1 var(--font-sans); cursor: pointer; transition: border-color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out); }
+.show-more:hover { border-color: var(--lamp-line); background: var(--lamp-wash); }
+.show-more span { color: var(--lamp); }
+
+/* Blocks rise in once, as they scroll into view. Only active while the effect in App.tsx runs (html[data-reveal]). */
+.is-fallback :is(.chapter-card > *, .project-grid > li, .certificate-grid > li, .stack-groups > li, .language-bars > li) { transition: opacity 650ms var(--ease-out), transform 650ms var(--ease-out); }
+html[data-reveal="on"] .is-fallback :is(.chapter-card > *:not(.fallback-notice), .project-grid > li, .certificate-grid > li, .stack-groups > li, .language-bars > li):not(.is-in) { opacity: 0; transform: translateY(18px); }
+html[data-reveal="on"] .is-fallback .language-bars li:not(.is-in) i::after { transform: scaleX(0); }
+.is-fallback .project-note { transition: transform 350ms var(--ease-out), border-color 350ms var(--ease-out), box-shadow 350ms var(--ease-out); }
+.is-fallback .project-note:hover { transform: translateY(-3px); border-color: var(--lamp-line); box-shadow: var(--shadow-1); }
+.is-fallback .certificate-grid button { transition: transform 350ms var(--ease-out), border-color 350ms var(--ease-out), background 350ms var(--ease-out); }
+.is-fallback .certificate-grid button:hover { transform: translateY(-3px); }
+
+/* Toolkit by kind of work. In the room's side card it is a short ruled list; in the simple version it is a grid of cards. */
+.stack-groups { display: grid; margin: var(--s-5) 0 var(--s-4); padding: 0; list-style: none; }
+.stack-groups li { display: grid; gap: 6px; padding: var(--s-3) 0; border-top: 1px solid var(--line); }
+.stack-groups b { color: var(--lamp); font: 500 var(--fs-label)/1 var(--font-sans); letter-spacing: var(--track-label); text-transform: uppercase; }
+.stack-groups span { color: var(--text-1); font: 400 1.125rem/1.3 var(--font-display); }
+.site:not(.is-fallback) .stack-groups { margin: var(--s-3) 0 0; }
+.site:not(.is-fallback) .stack-groups li { padding: var(--s-2) 0; }
+.site:not(.is-fallback) .stack-groups li:nth-child(n+4) { display: none; }
+.is-fallback .stack-groups { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--s-3); margin: var(--s-5) 0; }
+.is-fallback .stack-groups li { padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-2); background: var(--ink-800); }
+.is-fallback .stack-groups span { font-size: 1.375rem; }
+
+@media (min-width: 720px) {
+  .is-fallback .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1000px) {
+  .is-fallback .chapter-card { width: min(1120px, 100%); }
+  .is-fallback .project-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .is-fallback .fallback-portrait { width: min(30%, 300px); }
+  .is-fallback #intro .lead { max-width: 52ch; }
+  .is-fallback #experience .showcase { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: var(--s-4) var(--s-6); align-items: start; }
+  .is-fallback #experience .experience-photo { grid-column: 1; grid-row: 1 / span 4; }
+  .is-fallback #experience .showcase > :not(.experience-photo) { grid-column: 2; }
+  .is-fallback #stack .language-bars { max-width: 640px; }
+}
+@media (max-width: 719px) {
+  .filter-row { flex-wrap: nowrap; margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); overflow-x: auto; scrollbar-width: none; }
+  .filter-row button { flex: none; }
+  .language-bars li { grid-template-columns: 6rem minmax(0, 1fr) 2ch; }
+  .loading-choice { flex-direction: column; align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-choice { animation: none; opacity: 1; }
+  .is-fallback .project-note:hover, .is-fallback .certificate-grid button:hover { transform: none; }
+}
+
+/* Close for an open project in the simple version: sticky inside the card, so it follows the scroll until the card ends. */
+.project-close { position: sticky; top: 88px; z-index: 5; align-self: flex-end; flex: none; height: 36px; margin: 0 0 -36px; padding: 0 var(--s-3); border: 1px solid var(--lamp-line); border-radius: var(--r-pill); background: var(--veil); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--lamp); font: 500 var(--fs-small)/34px var(--font-sans); cursor: pointer; }
+.project-close:hover { background: var(--lamp); color: var(--ink-950); }

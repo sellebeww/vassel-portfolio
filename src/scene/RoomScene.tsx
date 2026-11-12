@@ -166,7 +166,7 @@ function DayCycle({ progress, still, workspace, low, atmosphere: chosen }: { pro
       ambient.current.intensity = .07 + state.daylight * .62;
       ambient.current.color.copy(colors.skyNight).lerp(colors.skyDay, state.daylight).lerp(colors.skyWarm, state.warmth * .65);
     }
-    if (warmFill.current) warmFill.current.intensity = .8 + (1 - state.daylight) * 2;
+    if (warmFill.current) warmFill.current.intensity = (.8 + (1 - state.daylight) * 2) * 1.3;
   }, -1);
   return <group>
     {workspace && <Suspense fallback={null}><CartoonWindow atmosphere={atmosphere} elapsed={elapsed} /></Suspense>}
@@ -174,8 +174,7 @@ function DayCycle({ progress, still, workspace, low, atmosphere: chosen }: { pro
     <hemisphereLight ref={ambient} args={["#87a5c0", "#45423f", .22]} /><rectAreaLight name="warm-environment-fill" ref={warmFill} position={[2.4, 2.7, 2.5]} rotation={[-1.05, 0, 0]} width={3.2} height={1.8} color="#ffd1a0" intensity={3.3} />
     <rectAreaLight position={[-1.2, 2.4, -.3]} rotation={[-.2, 0, 0]} width={6} height={1.2} intensity={1.1} color="#f0cda5" />
     <pointLight position={[-3.36, 2.60, -2.02]} intensity={1.2} distance={2.2} color="#ffe7bb" />
-    {workspace && <rectAreaLight position={[2.35, 1.18, 1.25]} rotation={[0, Math.PI, 0]} width={.7} height={.4} intensity={2.3} color="#8caec4" />}
-    {workspace && <rectAreaLight position={[1.0, 2.10, 2.95]} rotation={[-.35, -.45, 0]} width={2.4} height={1.5} intensity={1.7} color="#ffd2a1" />}
+    {workspace && !low && <rectAreaLight position={[2.35, 1.18, 1.25]} rotation={[0, Math.PI, 0]} width={.7} height={.4} intensity={2.3} color="#8caec4" />}
   </group>;
 }
 
@@ -190,7 +189,7 @@ function CameraDirector({ progress, rendered, reducedMotion }: Pick<SceneProps, 
   const qa = useMemo(() => new URLSearchParams(window.location.search).has("qa"), []);
   useFrame((_, delta) => {
     const requested = clamp(progress.current);
-    rendered.current = reducedMotion ? requested : THREE.MathUtils.damp(rendered.current, requested, 8, Math.min(delta, .1));
+    rendered.current = reducedMotion ? requested : THREE.MathUtils.damp(rendered.current, requested, 6, Math.min(delta, .1));
     if (Math.abs(rendered.current - requested) < .00001) rendered.current = requested;
     if (qa) gl.domElement.dataset.drawCalls = String(gl.info.render.calls);
     // A held camera does not need a new projection matrix or allocated timeline sample.
@@ -309,9 +308,23 @@ function LoadProgress({ onProgress }: Pick<SceneProps, "onProgress">) {
   return null;
 }
 
+/** From the desk chapters on, the camera fills the screen with lit desk and laptop, so pixel cost peaks. A slightly lower
+ * resolution there (at most 1.25) keeps scrolling smooth; the room, where the view is wide, keeps the full cap. */
+function CloseUpDpr({ progress, cap }: { progress: MutableRefObject<number>; cap: number }) {
+  const setDpr = useThree(state => state.setDpr), applied = useRef(0);
+  useFrame(() => {
+    const want = Math.max(1, Math.min(window.devicePixelRatio, progress.current > .43 ? Math.min(cap, 1.25) : cap));
+    if (want !== applied.current) { applied.current = want; setDpr(want); }
+  });
+  return null;
+}
+
 function FramePump({ animate, low, onSlow }: { animate: boolean; low: boolean; onSlow: () => void }) {
   const { invalidate, gl } = useThree();
   const samples = useRef({ count: 0, time: 0, warmup: 0, slowWindows: 0 });
+  // The camera only needs 60fps while the visitor scrolls; the ambient animation (window, projector, lamps) is
+  // slow, so a still room renders at 30fps and halves GPU work. Slowness is measured only while scrolling.
+  const busyUntil = useRef(0);
   useFrame((_, delta) => {
     if (!animate || low || document.hidden) return;
     const data = samples.current;
@@ -319,43 +332,52 @@ function FramePump({ animate, low, onSlow }: { animate: boolean; low: boolean; o
     // performance. Warm up after loading, then require two sustained slow windows.
     if (useProgress.getState().active) { data.warmup = data.count = data.time = data.slowWindows = 0; return; }
     if (data.warmup < 5) { data.warmup += Math.min(delta, .1); return; }
-    if (delta > .2) { data.count = data.time = 0; return; }
+    if (delta > .2 || performance.now() > busyUntil.current) { data.count = data.time = 0; return; }
     data.count++; data.time += delta;
-    if (data.count >= 120) {
-      data.slowWindows = data.time / data.count > .045 ? data.slowWindows + 1 : 0;
-      if (data.slowWindows >= 2) onSlow();
+    if (data.count >= 90) {
+      data.slowWindows = data.time / data.count > .033 ? data.slowWindows + 1 : 0;
+      if (data.slowWindows >= 2) { data.slowWindows = data.warmup = 0; onSlow(); }
       data.count = data.time = 0;
     }
   });
   useEffect(() => {
     gl.domElement.dataset.quality = low ? "efficient" : "full";
     const update = () => { if (!document.hidden) invalidate(); };
-    // Full quality uses R3F's own display-synced loop, avoiding two competing rAF
-    // schedulers. Efficient devices tick at 30fps; paused/reduced-motion rooms stay demand-only.
+    const wake = () => { busyUntil.current = performance.now() + 700; update(); };
+    // Efficient devices tick at 30fps; paused/reduced-motion rooms stay demand-only.
     const timer = animate && low ? window.setInterval(update, 1000 / 30) : undefined;
-    window.addEventListener("scroll", update, { passive: true }); document.addEventListener("visibilitychange", update);
-    update(); return () => { window.clearInterval(timer); window.removeEventListener("scroll", update); document.removeEventListener("visibilitychange", update); };
+    let raf = 0, last = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      // 28ms, not 33: on a 60Hz display two refreshes can land at 33.2ms and one jittered frame must not drop to 20fps.
+      if (now < busyUntil.current || now - last >= 28) { last = now; update(); }
+    };
+    if (animate && !low) raf = requestAnimationFrame(tick);
+    window.addEventListener("scroll", wake, { passive: true }); document.addEventListener("visibilitychange", update);
+    update(); return () => { window.clearInterval(timer); cancelAnimationFrame(raf); window.removeEventListener("scroll", wake); document.removeEventListener("visibilitychange", update); };
   }, [animate, low, gl, invalidate]);
   return null;
 }
 
 export default function RoomCanvas(props: SceneProps) {
   const rendered = useRef(props.progress.current);
-  const [adaptiveLow, setAdaptiveLow] = useState(() => window.innerWidth < 760 || navigator.hardwareConcurrency <= 4 || ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4);
-  const low = adaptiveLow || props.reducedMotion;
+  // Tier 0 full, 1 full at DPR 1, 2 efficient profile. A slow GPU steps down one tier at a time instead of jumping to the cheapest look.
+  const [tier, setTier] = useState(() => window.innerWidth < 760 || navigator.hardwareConcurrency <= 4 || ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4 ? 2 : 0);
+  const low = tier >= 2 || props.reducedMotion;
   const animate = !props.paused && !props.reducedMotion;
   // Pixel cost dominates this scene (area lights, soft shadows). 1.5 DPR is visually indistinguishable from
   // 1.75 on retina screens at about 27% fewer pixels shaded per frame; still frames on the efficient profile
   // (rendered on demand, so the extra pixels cost nothing between changes) keep the sharper cap.
-  const dprCap = low && !animate ? 1.75 : 1.5;
-  return <Canvas className="room-canvas" frameloop={animate && !low ? "always" : "demand"} dpr={[1, dprCap]} camera={{ position: cameraStops[0].position, fov: 39, near: .025, far: 40 }} gl={{ antialias: true, powerPreference: "high-performance", alpha: false }} shadows={{ type: THREE.PCFSoftShadowMap }} onCreated={({ gl }) => { gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.AgXToneMapping; gl.toneMappingExposure = 1.05; }}>
+  const dprCap = tier === 1 ? 1 : low && !animate ? 1.75 : 1.5;
+  return <Canvas className="room-canvas" frameloop="demand" dpr={[1, dprCap]} camera={{ position: cameraStops[0].position, fov: 39, near: .025, far: 40 }} gl={{ antialias: true, powerPreference: "high-performance", alpha: false }} shadows={{ type: THREE.PCFSoftShadowMap }} onCreated={({ gl }) => { gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.AgXToneMapping; gl.toneMappingExposure = 1.05; }}>
     {/* Background and fog share the page ink; fog now starts inside the room so the back wall and far corners
         recede slightly behind the lit subjects (the city outside opts out with fog={false}). */}
     <color attach="background" args={["#0f1920"]} /><fog attach="fog" args={["#0f1920", 7.5, 21]} />
     <Suspense fallback={null}><Room {...props} progress={rendered} low={low} /></Suspense>
     <CameraDirector progress={props.progress} rendered={rendered} reducedMotion={props.reducedMotion} />
     <LaptopContactBridge progress={rendered} contactSurface={props.contactSurface} onContactEntered={props.onContactEntered} />
-    <FramePump animate={animate} low={low} onSlow={() => setAdaptiveLow(true)} />
+    <CloseUpDpr progress={rendered} cap={dprCap} />
+    <FramePump animate={animate} low={low} onSlow={() => setTier(value => Math.min(2, value + 1))} />
     <LoadProgress onProgress={props.onProgress} />
   </Canvas>;
 }

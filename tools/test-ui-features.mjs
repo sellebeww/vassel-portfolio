@@ -147,9 +147,9 @@ try {
   await page.waitForSelector('.project-note[data-live="true"]');
   check('first project is the first pinned repository', (await page.$eval('.project-note h3', e => e.textContent)) === 'Tomato Vision');
   check('project card links to demo and source over https', await page.$$eval('.project-links a', as => as.map(a => a.href).join('|')) === 'https://sellebeww.github.io/tomato-vision/|https://github.com/sellebeww/tomato-vision');
-  check('all nine projects are directly selectable', await page.$eval('.project-picker select', e => e.options.length === 9));
-  await scroll(page, .72); await page.waitForSelector('.language-chips li');
-  check('stack chapter lists languages counted from the live repositories', (await page.$$eval('.language-chips li', els => els.map(e => e.textContent))).some(text => text.startsWith('PHP')));
+  check('all 22 projects are directly selectable', await page.$eval('.project-picker select', e => e.options.length === 22));
+  await scroll(page, .72); await page.waitForSelector('.language-bars li');
+  check('stack chapter lists languages counted from the live repositories', (await page.$$eval('.language-bars li', els => els.map(e => e.textContent))).some(text => text.startsWith('PHP')));
   await scroll(page, .46); await page.waitForSelector('#projects.is-active');
   check('GitHub was requested exactly once', page.githubCalls === 1, page.githubCalls);
   await page.screenshot({ path: new URL('desktop-github-project.png', output).pathname });

@@ -1,4 +1,4 @@
-import { Component, Suspense, createContext, lazy, type ErrorInfo, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Component, Suspense, createContext, lazy, type CSSProperties, type ErrorInfo, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useShowcase } from "./useShowcase";
 import { useRepos } from "./useRepos";
 import ContactInterface from "./ContactInterface";
@@ -11,7 +11,7 @@ import { overlayChapter, overlayHash, parseOverlay, type Overlay } from "./lib/d
 import { languageStats, timeAgo } from "./lib/github";
 import type { PaletteCommand } from "./lib/palette";
 const RoomCanvas = lazy(() => import("./scene/RoomScene"));
-import { achievementPreviews, achievements, cameraStops, chapterTitle, developmentPractices, experiencePhotos, experiences, githubUser, languageFallback, profile, projectShowcase, projectTools, resolveChapterId, showcaseWindow, techStack, type ChapterId } from "./data/portfolio";
+import { achievementPreviews, achievements, cameraStops, chapterTitle, developmentPractices, experiencePhotos, experiences, githubUser, languageFallback, profile, projectShowcase, projectTools, resolveChapterId, showcaseWindow, stackGroups, type ChapterId } from "./data/portfolio";
 
 /** The projector opens on the developer role (the one a visitor arriving from "Full-stack developer" is
  * looking for); the slideshow then runs through all ten roles in their usual order. */
@@ -41,15 +41,18 @@ function ShowcaseControls({ name, showcase, count }: { name: string; showcase: R
 type ShownProject = (typeof projectShowcase)[number] & { live: boolean; homepage: string | null; url: string; language: string; pushedAt: string };
 
 /** A case-study card: what kind of work, what it does, what it is built with, where to see it. The desk tour
- * shows one at a time; the reading view lists them all with their first screenshot. */
+ * shows one at a time; the simple version lists them all with their first screenshot. */
 function ProjectCard({ project, now, image = false, detailsOpen, onDetails }: { project: ShownProject; now: number; image?: boolean; detailsOpen?: boolean; onDetails?: (open: boolean) => void }) {
   const meta = [project.language, project.pushedAt && `updated ${timeAgo(project.pushedAt, now)}`].filter(Boolean).join(" · ");
+  const details = useRef<HTMLDetailsElement>(null), [expanded, setExpanded] = useState(false);
   return <article className="project-note" data-live={project.live ? "true" : "false"}>
+    {/* Simple version: while a project is open, Close follows the scroll and stays until the card ends. */}
+    {image && expanded && <button type="button" className="project-close" onClick={() => { if (details.current) details.current.open = false; }}>Close <span aria-hidden="true">✕</span></button>}
     <span className="project-kind">{[project.kind, project.context].filter(Boolean).join(" · ")}</span>
     <h3>{project.title}</h3>
     {image && <img className="project-shot" src={project.shots[0]} alt={project.alt} loading="lazy" />}
     <p>{project.problem ?? project.summary}</p>
-    <details className="project-details" open={detailsOpen} onToggle={event => onDetails?.(event.currentTarget.open)}><summary>Implementation & evidence <span aria-hidden="true">+</span></summary><p>{project.summary}</p>
+    <details ref={details} className="project-details" open={detailsOpen} onToggle={event => { setExpanded(event.currentTarget.open); onDetails?.(event.currentTarget.open); }}><summary>Implementation & evidence <span aria-hidden="true">+</span></summary><p>{project.summary}</p>
     {(project.role || project.outcome) && <dl className="project-facts">
       {project.role && <div><dt>Role</dt><dd>{project.role}</dd></div>}
       {project.outcome && <div><dt>Result</dt><dd>{project.outcome}{project.evidence && <> <a href={project.evidence} target="_blank" rel="noreferrer" aria-label={`Read the documented implementation of ${project.title}`}>Read the build notes ↗</a></>}</dd></div>}
@@ -70,6 +73,26 @@ const lightingOverride = (() => { const requested = new URLSearchParams(window.l
 const isMac = /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent);
 const SLOW_LOAD_MS = 20_000;
 
+/** The visitor's choice between the 3D room and the simple version is remembered, and `?view=simple|3d` sets it for a link.
+ * Automated runs (`?qa`) never read or write it, so scripted browsers always start in the room. */
+const VIEW_KEY = "vg-view";
+const qaRun = new URLSearchParams(window.location.search).has("qa");
+function preferredView(): "simple" | "3d" | null {
+  if (qaRun) return null;
+  try {
+    const asked = new URLSearchParams(window.location.search).get("view") ?? window.localStorage.getItem(VIEW_KEY);
+    if (asked === "simple" || asked === "3d") return asked;
+  } catch { /* storage is optional */ }
+  // No stated choice: Data Saver or a device with 2 GB of memory or less starts on the light version (the 3D room is ~4 MB).
+  const hints = navigator as Navigator & { connection?: { saveData?: boolean }; deviceMemory?: number };
+  return hints.connection?.saveData || (hints.deviceMemory !== undefined && hints.deviceMemory <= 2) ? "simple" : null;
+}
+function rememberView(view: "simple" | "3d") { if (!qaRun) try { window.localStorage.setItem(VIEW_KEY, view); } catch { /* storage is optional */ } }
+
+/** The simple version filters the project grid by what each project is, read from its own `kind`. */
+const projectGroup = (project: { kind: string }) => /android/i.test(project.kind) ? "Android" : /game/i.test(project.kind) ? "Games" : /machine/i.test(project.kind) ? "AI & ML" : "Web";
+const FIRST_PROJECTS = 6;
+
 export default function App() {
   const progress = useRef(0);
   const contactSurface = useRef<HTMLElement>(null);
@@ -84,7 +107,9 @@ export default function App() {
   const [soundOn, setSoundOn] = useState(false);
   const [toast, setToast] = useState("");
   const [sceneError, setSceneFailed] = useState(false);
-  const [readingView, setReadingView] = useState(false);
+  const [readingView, setReadingView] = useState(() => preferredView() === "simple");
+  const [projectFilter, setProjectFilter] = useState("All");
+  const [allProjects, setAllProjects] = useState(false);
   const sceneFailed = sceneError || readingView;
   const navigation = useRef<HTMLElement>(null);
   const [ready, setReady] = useState(false);
@@ -114,7 +139,7 @@ export default function App() {
     return () => window.cancelAnimationFrame(frame);
   }, [ready, loadPercent, sceneFailed, reducedMotion, shownPercent >= 100]);
   const modalOpen = overlay !== null || paletteOpen;
-  // The reading view is read at the visitor's pace: nothing in it advances on its own.
+  // The simple version is read at the visitor's pace: nothing in it advances on its own.
   const experienceShowcase = useShowcase(experiencePhotos.length, active === "experience" && !modalOpen && !sceneFailed, reducedMotion, 2500, { pauseOnHover: false }, FIRST_TECH_PHOTO);
   // The desk tour moves to the next project every 3.5 s. It holds while the details are open (they are being read),
   // while a mouse rests on the card or the picker, and for three beats after the visitor picks a project.
@@ -135,6 +160,7 @@ export default function App() {
   const toggleReadingView = useCallback(() => {
     if (sceneError) return;
     if (readingView) { setReady(false); setShownPercent(0); setLoaderGone(false); }
+    rememberView(readingView ? "3d" : "simple");
     setReadingView(value => !value);
     document.documentElement.style.setProperty("--stack-boards", "0");
     document.documentElement.dataset.stackBoards = "off";
@@ -142,6 +168,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [readingView, sceneError]);
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(""), 2400); return () => window.clearTimeout(timer); }, [toast]);
+
 
   const onToggleSound = useCallback(async () => {
     const engine = ambience.current!;
@@ -216,22 +243,14 @@ export default function App() {
     }
   }, [sceneFailed]);
 
-  // Chapter paging. A wheel or trackpad gesture, or a scroll key, moves exactly one chapter: the page never
-  // drifts freely and then gets pulled back, which is what made scrolling feel like it fought the visitor.
-  // A trackpad's momentum tail belongs to the gesture that started it, so one flick is one chapter; a fresh
-  // gesture during a glide extends it to the next chapter without stopping. Touch and the scrollbar still
-  // scroll natively and then settle on a chapter in the direction they were moving.
-  const contactEnteredRef = useRef(contactEntered);
-  contactEnteredRef.current = contactEntered;
+  // Scroll scrubbing. The camera follows the scroll position directly (eased in the scene), so the animation stops
+  // exactly where the visitor stops and continues when they scroll again. Nothing snaps or pulls back. The only
+  // scripted movement is the glide a chapter link or number key starts; any wheel, touch or key press takes over from it.
   useEffect(() => {
-    if (!ready || sceneFailed || modalOpen || new URLSearchParams(window.location.search).has("qa")) return;
-    const stops = () => { const maximum = Math.max(1, document.documentElement.scrollHeight - window.innerHeight); return snapStops.map(p => scrollAt(p) * maximum); };
-
-    // A critically damped spring drives the scroll position. Velocity carries over when the target changes,
-    // so extending a glide never stalls or jerks. Longer trips get a softer spring so the camera does not
-    // whip through the room (about 1.2 s to a neighbouring chapter, up to about 2 s across the whole room).
+    if (!ready || sceneFailed) return;
+    // A critically damped spring drives the scroll position. Longer trips get a softer spring so the camera
+    // does not whip through the room (about 1.2 s to a neighbouring chapter, up to about 2 s across the room).
     let frame = 0, position = 0, velocity = 0, target: number | null = null, omega = 6, last = 0;
-    let timer = 0, touching = false, direction = 0, lastY = window.scrollY;
     const stopGlide = () => { window.cancelAnimationFrame(frame); frame = 0; target = null; velocity = 0; };
     const step = (now: number) => {
       let dt = Math.min(.05, (now - last) / 1000); last = now;
@@ -246,97 +265,21 @@ export default function App() {
       if (done) { frame = 0; target = null; velocity = 0; } else frame = window.requestAnimationFrame(step);
     };
     const glide = (to: number) => {
-      window.clearTimeout(timer);
       if (reducedMotion) { stopGlide(); window.scrollTo({ top: to, behavior: "instant" }); return; }
       if (!frame) { position = window.scrollY; velocity = 0; last = performance.now(); frame = window.requestAnimationFrame(step); }
       target = to;
-      const screens = Math.abs(to - position) / window.innerHeight;
-      omega = clamp(6.4 - .45 * Math.max(0, screens - 1.2), 3.6, 6.4);
+      omega = clamp(6.4 - .45 * Math.max(0, Math.abs(to - position) / window.innerHeight - 1.2), 3.6, 6.4);
     };
     glideTo.current = glide;
-
-    // The chapter to move from: where a running glide is heading, otherwise the stop the page rests nearest.
-    const move = (steps: number) => {
-      const list = stops(), from = target ?? window.scrollY;
-      const resting = list.findIndex(stop => Math.abs(stop - from) <= 2), ahead = list.findIndex(stop => stop > from + 2);
-      const next = ahead < 0 ? list.length : ahead, base = resting >= 0 ? resting : steps > 0 ? next - 1 : next;
-      const index = clamp(base + steps, 0, list.length - 1);
-      if (Math.abs(list[index] - window.scrollY) > 1 || target !== null) glide(list[index]);
-    };
-
-    // Content that scrolls on its own (a long chapter card, the contact page) keeps the wheel until its end.
-    const scrollsInside = (node: EventTarget | null, dy: number) => {
-      for (let element = node instanceof Element ? node : null; element && element !== document.body; element = element.parentElement) {
-        const style = getComputedStyle(element);
-        if (!/(auto|scroll)/.test(style.overflowY) || element.scrollHeight <= element.clientHeight + 1) continue;
-        if (dy > 0 ? element.scrollTop + element.clientHeight < element.scrollHeight - 1 : element.scrollTop > 0) return true;
-      }
-      return false;
-    };
-
-    // A trackpad's momentum tail is a stream of shrinking deltas, so it never opens a new gesture, even when a
-    // heavy frame delays it: a short silence only starts a new gesture if the delta also grows again. A long
-    // silence, or a sharp rise in delta during a gesture (a second flick on top of momentum), always does.
-    let gestureAt = -1e9, lastWheel = -1e9, lastSize = 0, used = false, travelled = 0;
-    const onWheel = (event: WheelEvent) => {
-      if (event.ctrlKey || contactEnteredRef.current) return;
-      const dy = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1);
-      if (Math.abs(dy) < Math.abs(event.deltaX) || !dy || scrollsInside(event.target, dy)) return;
-      event.preventDefault();
-      const now = event.timeStamp, size = Math.abs(dy);
-      const gap = now - lastWheel;
-      const fresh = gap > 350 || (gap > 180 && size > lastSize * 1.3) || (used && now - gestureAt > 280 && size > 30 && size > lastSize * 2.2);
-      if (fresh) { gestureAt = now; used = false; travelled = 0; }
-      lastWheel = now; lastSize = size; travelled += dy;
-      if (!used && Math.abs(travelled) >= 12) { used = true; move(Math.sign(travelled)); }
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || contactEnteredRef.current) return;
-      if (event.target instanceof Element && event.target.closest("input, textarea, select, button, a, summary, [contenteditable='true']")) return;
-      const key = event.key;
-      const steps = key === "ArrowDown" || key === "PageDown" || (key === " " && !event.shiftKey) ? 1
-        : key === "ArrowUp" || key === "PageUp" || (key === " " && event.shiftKey) ? -1
-        : key === "Home" ? -snapStops.length : key === "End" ? snapStops.length : 0;
-      if (!steps || scrollsInside(event.target, steps)) return;
-      event.preventDefault(); move(steps);
-    };
-
-    // Touch and scrollbar drags move the page natively; once they rest, the page settles on a chapter in the
-    // direction it was travelling (a push of more than 6% of the viewport moves on, less returns).
-    const settle = () => {
-      if (touching || target !== null || contactEnteredRef.current) return;
-      const list = stops(), here = window.scrollY, push = window.innerHeight * .06;
-      if (list.some(stop => Math.abs(stop - here) <= 2)) return;
-      const above = list.findIndex(stop => stop > here), after = above < 0 ? list.length - 1 : above, before = clamp(after - 1, 0, list.length - 1);
-      const index = direction > 0 ? (here - list[before] < push ? before : after)
-        : direction < 0 ? (list[after] - here < push ? after : before)
-        : (here - list[before] < list[after] - here ? before : after);
-      glide(list[index]);
-    };
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (frame) { lastY = y; return; }
-      if (y !== lastY) direction = Math.sign(y - lastY);
-      lastY = y;
-      window.clearTimeout(timer); timer = window.setTimeout(settle, 220);
-    };
-    const down = () => { touching = true; stopGlide(); window.clearTimeout(timer); };
-    const up = () => { touching = false; window.clearTimeout(timer); timer = window.setTimeout(settle, 220); };
-
-    window.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("touchstart", down, { passive: true });
-    window.addEventListener("touchend", up, { passive: true });
-    window.addEventListener("touchcancel", up, { passive: true });
+    const interrupt = () => { if (frame) stopGlide(); };
+    window.addEventListener("wheel", interrupt, { passive: true });
+    window.addEventListener("touchstart", interrupt, { passive: true });
+    window.addEventListener("keydown", interrupt);
     return () => {
-      window.clearTimeout(timer); stopGlide(); glideTo.current = null;
-      window.removeEventListener("wheel", onWheel); window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("scroll", onScroll); window.removeEventListener("touchstart", down);
-      window.removeEventListener("touchend", up); window.removeEventListener("touchcancel", up);
+      stopGlide(); glideTo.current = null;
+      window.removeEventListener("wheel", interrupt); window.removeEventListener("touchstart", interrupt); window.removeEventListener("keydown", interrupt);
     };
-  }, [ready, sceneFailed, modalOpen, reducedMotion]);
+  }, [ready, sceneFailed, reducedMotion]);
 
   // Overlays own a history entry so Back closes them and every one has a shareable address.
   const openOverlay = useCallback((next: Overlay) => {
@@ -385,6 +328,31 @@ export default function App() {
   }), [liveRepos]);
   const featuredProject = shown[focus];
   const languages = useMemo(() => liveRepos.length ? languageStats(liveRepos) : languageFallback, [liveRepos]);
+  const topLanguage = Math.max(1, ...languages.map(item => item.count));
+  const projectGroups = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const project of shown) counts.set(projectGroup(project), (counts.get(projectGroup(project)) ?? 0) + 1);
+    return [["All", shown.length] as const, ...Array.from(counts).sort((a, b) => b[1] - a[1])];
+  }, [shown]);
+  const filteredProjects = projectFilter === "All" ? shown : shown.filter(project => projectGroup(project) === projectFilter);
+  const visibleProjects = allProjects || projectFilter !== "All" ? filteredProjects : filteredProjects.slice(0, FIRST_PROJECTS);
+  const hiddenProjects = filteredProjects.length - visibleProjects.length;
+
+  // Simple version: blocks rise in as they scroll into view. Content is visible by default; the hidden start state only
+  // exists while this effect is running (`data-reveal`), so no script or reduced motion means no hidden content.
+  useEffect(() => {
+    if (!sceneFailed || reducedMotion || !("IntersectionObserver" in window)) return;
+    const root = document.documentElement;
+    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+      if (entry.isIntersecting) { entry.target.classList.add("is-in"); observer.unobserve(entry.target); }
+    }), { rootMargin: "0px 0px -6% 0px" });
+    root.dataset.reveal = "on";
+    document.querySelectorAll<HTMLElement>(".is-fallback .chapter-card > *:not(.fallback-notice), .is-fallback .project-grid > li, .is-fallback .certificate-grid > li, .is-fallback .stack-groups > li, .is-fallback .language-bars > li").forEach((element, order) => {
+      if (element.classList.contains("is-in")) return;
+      element.style.transitionDelay = `${(order % 3) * 70}ms`; observer.observe(element);
+    });
+    return () => { observer.disconnect(); delete root.dataset.reveal; };
+  }, [sceneFailed, reducedMotion, projectFilter, allProjects, languages]);
   const goTo = useCallback((id: ChapterId) => {
     // Without the 3D camera there is nothing to glide through, so the document jumps as it always did.
     scrollToChapter(id, reducedMotion || sceneFailed ? "instant" : "smooth");
@@ -433,20 +401,25 @@ export default function App() {
   return (
     <div className={`site ${sceneFailed ? "is-fallback" : ""} ${opened ? "scene-ready" : ""}`} data-active={active} data-contact={contactEntered ? "inside" : "room"} data-project={focus} data-motion={reducedMotion ? "reduced" : modalOpen ? "modal" : "full"} data-sound={soundOn ? "on" : "off"}>
       <a className="skip-link" href="#intro">Skip to portfolio content</a>
-      {!sceneFailed && <div className="scene-layer">
+      {!sceneFailed && <div className="scene-layer" aria-hidden="true">
         <SceneBoundary onFailure={() => setSceneFailed(true)} fallback={<button className="scene-error" onClick={() => setSceneFailed(true)}>Open accessible view</button>}>
           <Suspense fallback={null}><RoomCanvas contactSurface={contactSurface} onContactEntered={setContactEntered} progress={progress} active={active} reducedMotion={reducedMotion} paused={modalOpen || contactEntered} projectionPaused={experienceShowcase.paused} projectIndex={focus} projectPaused={projectShowcaseTour.paused && active === "projects"} experienceIndex={experienceShowcase.index} achievementIndex={awardShowcase.index} onSelectExperience={experienceShowcase.select} onSelectAchievement={awardShowcase.select} onOpenExperience={openExperiencePhoto} onOpenAchievements={index => openOverlay({ kind: "certificates", initial: index })} atmosphere={lightingOverride} languages={languages} onProgress={setLoadPercent} onReady={onReady} /></Suspense>
         </SceneBoundary>
       </div>}
       {!sceneFailed && !loaderGone && <div className={`loading-room ${opened ? "is-done" : ""}`} role="status">
         <div className="loading-inner">
+          <p className="loading-kicker" aria-hidden="true">Portfolio · {new Date().getFullYear()}</p>
           <p className="loading-name" aria-hidden="true">Vassel <em>Goleyu</em></p>
+          <p className="loading-role" aria-hidden="true">{profile.role}</p>
           {/* Real asset progress from the 3D loader; the bar eases between reports so it never jumps. */}
           <div className="loading-meter" aria-hidden="true"><span style={{ transform: `scaleX(${Math.max(.03, shownPercent / 100)})` }} /></div>
           {/* Counts 1 → 100: it starts at 1 the moment the loader shows and only reads 100 once the room is open. */}
-          <span className="loading-sub">{opened ? "The room is ready" : ready ? "Lighting the room" : "Opening the room"} <b>{opened ? 100 : clamp(Math.floor(shownPercent), 1, 99)}%</b></span>
-          {/* The only way out of a stalled load: it appears after SLOW_LOAD_MS, never on a normal start. */}
-          {slowLoad && !ready && <span className="loading-slow">The room is taking longer than usual. <button type="button" onClick={toggleReadingView}>Read without 3D</button></span>}
+          <span className="loading-sub">{opened ? "The room is ready" : ready ? "Lighting the room" : ["Opening the room", "Hanging the certificates", "Setting up the desk", "Switching on the monitors"][Math.min(3, Math.floor(shownPercent / 25))]} <b>{opened ? 100 : clamp(Math.floor(shownPercent), 1, 99)}%</b></span>
+          {/* The way out is offered from the first second, not only after a stall: the room is a big download. */}
+          <div className={`loading-choice ${slowLoad && !ready ? "is-slow" : ""}`}>
+            <span>{slowLoad && !ready ? "The room is taking longer than usual." : "Slow connection, or just want the content?"}</span>
+            <button type="button" onClick={toggleReadingView}>Open the simple version <i aria-hidden="true">→</i></button>
+          </div>
         </div>
       </div>}
       {!sceneFailed && <div className="scene-shade" aria-hidden="true" />}
@@ -454,9 +427,9 @@ export default function App() {
       {!sceneFailed && <CursorLabel />}
 
       <header className="topbar">
-        <button className="wordmark" onClick={() => goTo("intro")} aria-label="Back to the room">VG<span>.</span></button>
+        <button className="wordmark" onClick={() => goTo("intro")} aria-label="VG. Back to the room">VG<span>.</span></button>
         <nav ref={navigation} aria-label="Portfolio chapters">
-          {cameraStops.map((stop, index) => <button key={stop.id} aria-label={stop.label} aria-current={active === stop.id ? "step" : undefined} className={active === stop.id ? "active" : ""} onClick={() => goTo(stop.id)}><small>{String(index + 1).padStart(2, "0")}</small><span>{stop.label}</span></button>)}
+          {cameraStops.map((stop, index) => <button key={stop.id} aria-label={stop.label} data-n={String(index + 1).padStart(2, "0")} aria-current={active === stop.id ? "step" : undefined} className={active === stop.id ? "active" : ""} onClick={() => goTo(stop.id)}><span>{stop.label}</span></button>)}
         </nav>
         <a className="topbar-contact" href={`mailto:${profile.email}`}>Let’s talk <span aria-hidden="true">↗</span></a>
       </header>
@@ -465,17 +438,17 @@ export default function App() {
 
       {/* Wayfinding: where you are in the six chapters. The scroll cue only matters before the first scroll. */}
       <div className="room-caption" aria-hidden="true"><span><b className="live-dot" />{String(chapterNumber).padStart(2, "0")} / {String(cameraStops.length).padStart(2, "0")} — {cameraStops[Math.max(0, chapterNumber - 1)].label}</span><span className="scroll-cue">Scroll <i>↓</i></span></div>
-      <div className="dock" role="group" aria-label="Site tools">
-        <button onClick={() => setPaletteOpen(true)} aria-label="Open the command palette" aria-keyshortcuts="Control+K Meta+K"><kbd>{isMac ? "⌘K" : "Ctrl K"}</kbd><span>Menu</span></button>
-        {!sceneError && <button data-view="reading" aria-pressed={readingView} onClick={toggleReadingView}>{readingView ? "Enter 3D room" : "Reading view"}</button>}
-        {ambience.current.supported && <button onClick={() => void onToggleSound()} aria-pressed={soundOn} aria-label="Chill jazz music" className="dock-sound"><span aria-hidden="true">♪</span><span>Music {soundOn ? "on" : "off"}</span></button>}
-      </div>
+      <aside className="dock" aria-label="Site tools">
+        <button className="dock-menu" data-key={isMac ? "⌘K" : "Ctrl K"} onClick={() => setPaletteOpen(true)} aria-label="Menu, command palette" aria-keyshortcuts="Control+K Meta+K"><span>Menu</span></button>
+        {!sceneError && <button data-view="reading" aria-pressed={readingView} onClick={toggleReadingView}>{readingView ? "3D version" : "Simple version"}</button>}
+        {ambience.current.supported && <button onClick={() => void onToggleSound()} aria-pressed={soundOn} className="dock-sound"><span aria-hidden="true">♪</span><span>Music {soundOn ? "on" : "off"}</span></button>}
+      </aside>
       <div className="sr-only" role="status" aria-live="polite">{`Chapter ${chapterNumber} of ${cameraStops.length}: ${cameraStops[Math.max(0, chapterNumber - 1)].label}`}</div>
       <div className={`toast ${toast ? "is-visible" : ""}`} role="status" aria-live="polite">{toast}</div>
 
       <ChapterContext.Provider value={{ active, fallback: sceneFailed }}><main>
         <Chapter id="intro" side="right">
-          {sceneFailed && <><p className="fallback-notice" role="status">{readingView ? "Reading view. The same work, at your own pace." : "3D is unavailable on this device. All portfolio content is available below."}</p><img className="fallback-portrait" src="/images/profile/vassel.webp" alt="Vassel Goleyu in his navy university blazer" /></>}
+          {sceneFailed && <><p className="fallback-notice" role="status">{readingView ? <>Simple version: the same work, lighter and faster. <button type="button" onClick={toggleReadingView}>Switch to the 3D room</button></> : "3D is unavailable on this device. All portfolio content is available below."}</p><img className="fallback-portrait" src="/images/profile/vassel.webp" alt="Vassel Goleyu in his navy university blazer" /></>}
           <span className="chapter-number">Full-stack developer / Tangerang, ID</span>
           <h1>Vassel <em>Goleyu</em></h1>
           <p className="lead">{profile.headline}</p>
@@ -521,7 +494,7 @@ export default function App() {
           <span className="chapter-number">03 — Achievements</span>
           <h2>A record of curiosity.</h2>
           <p className="chapter-deck">Three golds. Nine certificates.</p>
-          {/* In the room the cabinet beside the card shows the certificates in 3D; the reading view lays all of them out. */}
+          {/* In the room the cabinet beside the card shows the certificates in 3D; the simple version lays all of them out. */}
           {sceneFailed ? <ul className="certificate-grid" aria-label="Certificates">{achievements.map(([file, placement, competition, year], index) => <li key={file}>
             <button onClick={() => openOverlay({ kind: "certificates", initial: index })} aria-label={`Enlarge ${placement}, ${competition}, ${year}`}>
               <img src={achievementPreviews[index]} alt="" loading="lazy" /><small>{year} · {competition}</small><b>{placement}</b>
@@ -538,7 +511,11 @@ export default function App() {
           <span className="chapter-number">04 — Projects</span>
           <h2>Selected work.</h2>
           <p className="chapter-deck">Web, Android, and small worlds to explore.</p>
-          {sceneFailed ? <ul className="project-grid" aria-label="Selected projects">{shown.map(project => <li key={project.repo}><ProjectCard project={project} now={now} image /></li>)}</ul>
+          {sceneFailed ? <>
+            <div className="filter-row" role="group" aria-label="Filter projects">{projectGroups.map(([group, count]) => <button key={group} aria-pressed={projectFilter === group} onClick={() => { setProjectFilter(group); setAllProjects(false); }}>{group}<small>{count}</small></button>)}</div>
+            <ul className="project-grid" aria-label="Selected projects">{visibleProjects.map(project => <li key={project.repo}><ProjectCard project={project} now={now} image /></li>)}</ul>
+            {hiddenProjects > 0 && <button className="show-more" onClick={() => setAllProjects(true)}>Show all {filteredProjects.length} projects <span aria-hidden="true">↓</span></button>}
+          </>
           : <div className="project-tour" {...projectShowcaseTour.interaction}>
             <div className="project-picker">
               <label><span className="sr-only">Choose a project</span><select value={focus} onChange={event => projectShowcaseTour.select(Number(event.target.value))}>{shown.map((project, i) => <option key={project.repo} value={i}>{String(i + 1).padStart(2, "0")} / {project.title}</option>)}</select></label>
@@ -556,12 +533,10 @@ export default function App() {
         <Chapter id="stack" side="right">
           <span className="chapter-number">05 — Tech stack</span>
           <h2>What I build with.</h2>
-          <p>The languages across my public projects, the frameworks those projects name, and the web stack from my developer role at UMN Medical Center.</p>
-          <ul className="language-chips" aria-label="Primary languages on GitHub">{languages.slice(0, 6).map(item => <li key={item.language}>{item.language}<small>{item.count}</small></li>)}</ul>
+          <p>The languages across my public projects, the frameworks those projects name, and the full-stack toolkit from my roles and projects.</p>
+          <ul className="language-bars" aria-label="Primary languages on GitHub">{languages.slice(0, 6).map(item => <li key={item.language} style={{ "--share": item.count / topLanguage } as CSSProperties}><span>{item.language}</span><i aria-hidden="true" /><small>{item.count}</small></li>)}</ul>
           <ul className="tool-list" aria-label="Frameworks and tools named in the projects">{projectTools.map(tool => <li key={tool}>{tool}</li>)}</ul>
-          <dl className="stack-notes">{techStack.map(tool => <div key={tool.id}>
-            <dt>{tool.name}<span>{tool.category}</span></dt><dd>{tool.detail}</dd>
-          </div>)}</dl>
+          <ul className="stack-groups" aria-label="Toolkit by kind of work">{stackGroups.map(group => <li key={group.id}><b>{group.label}</b><span>{group.items.join(" · ")}</span></li>)}</ul>
           <ul className="practice-list" aria-label="Development practices">{developmentPractices.map(practice => <li key={practice}>{practice}</li>)}</ul>
           <span className="quiet-note">Next — the laptop opens into a contact page</span>
         </Chapter>

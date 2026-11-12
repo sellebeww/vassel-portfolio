@@ -31,10 +31,11 @@ check('showcased projects match the pinned repositories, fill all three monitors
   assert.deepEqual(data.projectShowcase.map(item => item.repo), [...data.pinnedRepos]);
   for (const item of data.projectShowcase) { assert.ok(item.shots.length >= 1); for (const shot of item.shots) fsSync.accessSync(new URL(`../public${shot}`, import.meta.url)); }
 });
-check('stack technologies match the documented developer role', () => {
+check('stack boards fit six rows and keep the documented Laravel role', () => {
   const role = data.experiences.find(role => role.id === 'medical-developer');
-  assert.deepEqual(data.techStack.map(tool => tool.name), ['Laravel', 'REST APIs', 'MySQL']);
-  data.techStack.forEach(tool => assert.ok(role.description.toLowerCase().includes(tool.name.toLowerCase())));
+  assert.ok(data.techStack.length <= 6);
+  assert.ok(data.techStack.some(tool => tool.name === 'Laravel') && role.description.includes('Laravel'));
+  assert.equal(new Set(data.techStack.map(tool => tool.id)).size, data.techStack.length);
 });
 const appSource = await fs.readFile(new URL('../src/App.tsx', import.meta.url), 'utf8');
 check('blazer-original interaction removed, not merely hidden', () => assert.ok(!/View original blazer|almet-reference|onInspectAlmet|showAlmetReference/.test(appSource)));

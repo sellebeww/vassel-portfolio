@@ -178,10 +178,77 @@ export const projectShowcase: readonly ProjectShowcase[] = [
     summary: "An offline aid for village health volunteers and midwives: danger signs in pregnancy and after birth, SMS referrals and an optional district-health server.",
     kind: "Android app", context: "Maternal health", problem: "Keep maternal-health reference and referral tools accessible offline.", outcome: "An Android prototype with danger-sign prompts and SMS referrals; not evidence of clinical effectiveness.", stack: ["Kotlin", "Android", "Offline", "SMS"],
     shots: shots("bunda-siaga", 1), alt: "BUNDA SIAGA: kader home, a danger-sign question, and the red priority result with its reasons" },
+  // Newer repositories. Screenshots come from each repository's own docs (one per project, cropped to the monitor's 16:10);
+  // the data in these demos is fictional or synthetic, which each outcome says where the README does.
+  { repo: "EDUVIA", title: "EDUVIA", language: "Ruby", homepage: null,
+    summary: "Siaga Kelas: one tap sends a prepared study kit to the duty teacher when a subject teacher is absent, so free periods stay learning time.",
+    kind: "Web app", context: "STACK 2026 hackathon MVP", problem: "Keep a class learning when its teacher cannot attend.",
+    outcome: "A curriculum-deputy dashboard, duty-teacher slips, attendance sheets and a kit bank. Known limitations are listed in the README.", stack: ["Rails 8", "Hotwire", "PostgreSQL"],
+    shots: shots("eduvia", 1), alt: "EDUVIA: today's duty schedule with the study-kit status for each period" },
+  { repo: "HakData", title: "Hak Data", language: "TypeScript", homepage: null,
+    summary: "Helps people in Indonesia use their personal-data rights under the PDP Law: find a company's privacy channel, send the right letter and chase the deadline automatically.",
+    kind: "Web app", context: "Not legal advice", problem: "Make personal-data requests findable, timed and provable.",
+    outcome: "A company directory, a letter builder per right, deadline reminders through RabbitMQ and an evidence dossier. The legal research has not been reviewed by a lawyer.", stack: ["RabbitMQ"],
+    shots: shots("hakdata", 1), alt: "Hak Data: privacy-channel directory with company search and filters" },
+  { repo: "BALIKIN", title: "BALIKIN", language: "TypeScript", homepage: "https://balikin-uyy.vercel.app",
+    summary: "A shared returns network for local brands: returns from many brands are gathered at one point near the buyer, then sent back in a single trip.",
+    kind: "Web app", context: "Prototype with synthetic data", problem: "Test when pooled returns cost less than every brand handling its own.",
+    outcome: "A seven-screen demo workspace with a network dashboard, cost simulator, and brand and buyer portals. Costs are assumptions, not proof of business viability.", stack: ["Next.js"],
+    shots: shots("balikin", 1), alt: "BALIKIN: network dashboard with return volume, cost per return and a cost curve" },
+  { repo: "Tagih-Tuntas", title: "Tagih-Tuntas", language: "TypeScript", homepage: "https://tagih-tuntas.vercel.app",
+    summary: "A workspace for Indonesian B2B vendors: find what blocks an invoice, route it to the right party and track it until paid, without holding any funds.",
+    kind: "Web app", context: "Prototype with fictional data", problem: "Stop invoices stalling on missing documents, receipt or disputes.",
+    outcome: "A receivables dashboard, work queue, document matching against customer terms and a gate that blocks sending until documents match. No bank or accounting integration.", stack: ["Next.js"],
+    shots: shots("tagih-tuntas", 1), alt: "Tagih-Tuntas: receivables dashboard showing where invoices are stuck and who owns them" },
+  { repo: "ADAPTIV", title: "ADAPTIV", language: "TypeScript", homepage: "https://adaptiv-beta.vercel.app",
+    summary: "Dynamic assessment for vocational schools and industry: tests whether students can adapt a skill when working conditions change, not only repeat a memorised procedure.",
+    kind: "Web app", context: "Vocational education", problem: "Show adaptability, which portfolios and certificates cannot prove.",
+    outcome: "A seven-phase test session and a Skill Passport with a five-dimension radar and a QR code for public verification.", stack: ["React", "Vite", "Tailwind"],
+    shots: shots("adaptiv", 1), alt: "ADAPTIV: landing page of the dynamic assessment platform" },
+  { repo: "cobasepakat", title: "CobaSepakat", language: "TypeScript", homepage: "https://cobasepakat.vercel.app",
+    summary: "A deliberation platform for communities: instead of arguing about testable facts, residents agree on a measured trial, run it briefly and decide from the data.",
+    kind: "Web app", context: "Community decision-making", problem: "Settle factual disagreements with an experiment instead of an endless debate.",
+    outcome: "A nine-stage issue flow from evidence to experiment design, with a feasibility gate and an emergency stop rule.", stack: ["React", "Vite", "Tailwind"],
+    shots: shots("cobasepakat", 1), alt: "CobaSepakat: community dashboard with an active parking-congestion trial" },
+  { repo: "EDITScope", title: "EDITScope", language: "TypeScript", homepage: "https://editscope.vercel.app",
+    summary: "A rights-aware editing workspace: checks each asset's recorded permissions against how it is used in a project and suggests the smallest fix.",
+    kind: "Web app", problem: "Catch licence conflicts before a project ships.",
+    outcome: "Four honest statuses (verified, conditional, conflict, unverified), minimum-change recommendations, a timeline view and PDF or CSV reports. Unclear cases always go to a human reviewer.", stack: ["TypeScript"],
+    shots: shots("editscope", 1), alt: "EDITScope: project overview with active projects, registered assets and a conflict table" },
+  { repo: "Alur-Sense", title: "AlurSense", language: "TypeScript", homepage: null,
+    summary: "A diagnostics platform for building pipe networks: systematic leak investigations that are open about uncertainty and leave the final decision to a person.",
+    kind: "Web app", context: "Prototype with fictional data", problem: "Replace guesswork about where a building leak starts.",
+    outcome: "Investigations with competing location hypotheses, explainable next-check recommendations and printable reports. It never starts physical tests or confirms a leak without evidence.", stack: ["TypeScript"],
+    shots: shots("alur-sense", 1), alt: "AlurSense: maintenance dashboard with active and pending investigations" },
+  { repo: "ProofLoop", title: "ProofLoop", language: "CSS", homepage: null,
+    summary: "Organisational continuity: verifies that a successor can really repeat a process, so work keeps running when people change roles.",
+    kind: "Web app", context: "Serverless prototype with fictional data", problem: "Written handover notes do not prove a successor can do the work.",
+    outcome: "Guided two-cycle handovers for owner, successor and reviewer, with a sustainability report on independence and help needed.", stack: ["Browser storage"],
+    shots: shots("proofloop", 1), alt: "ProofLoop: sustainability dashboard of processes, active transfers and tasks" },
+  { repo: "PINJEK", title: "PINJEK", language: "TypeScript", homepage: "https://pinjek.vercel.app",
+    summary: "A shared comparison-part network for electronics repair shops: borrow a tested unit to confirm which component is faulty before buying spare parts.",
+    kind: "Web app", context: "MVP with sample data", problem: "Avoid buying parts for a guessed fault.",
+    outcome: "A guided three-step diagnosis, comparison-unit recommendations and an impact dashboard in Indonesian and rupiah. No payments, couriers or authentication.", stack: ["Next.js", "React", "Tailwind"],
+    shots: shots("pinjek", 1), alt: "PINJEK: impact dashboard with saved cost, diagnosis time and a guided-diagnosis banner" },
+  { repo: "jalan-toga", title: "Jalan Toga", language: "TypeScript", homepage: "https://jalan-toga.vercel.app",
+    summary: "A thesis companion for Indonesian students: personal roadmap, chapter guides, a statistics toolkit, reference manager, supervision log and viva simulation.",
+    kind: "Web app (PWA)", context: "Student tool", problem: "Give a student who feels lost a clear path to graduation.",
+    outcome: "A ten-stage roadmap, a research statistics toolkit, a progress tracker, and light and dark themes.", stack: ["React", "Vite", "Tailwind", "PWA"],
+    shots: shots("jalan-toga", 1), alt: "Jalan Toga: student home with thesis progress, daily focus and deadlines" },
+  { repo: "sellebew-arcade", title: "Sellebeww Arcade", language: "TypeScript", homepage: null,
+    summary: "An interactive pixel-art arcade: answer four short questions, then play your own custom mini game on a 3D arcade cabinet.",
+    kind: "Web game", problem: "Turn a few answers into a game that is ready to play.",
+    outcome: "A design card from the answers, game code written by Gemini, a built-in sample game while it loads, and a shareable score card.", stack: ["React", "three.js", "XState", "Express", "Gemini"],
+    shots: shots("sellebew-arcade", 1), alt: "Sellebeww Arcade: a pixel-art platformer on a 3D arcade cabinet" },
+  { repo: "vassel-fashion-store", title: "VASSEL Fashion Store", language: "TypeScript", homepage: "https://vassel-fashion-store.vercel.app",
+    summary: "A fashion e-commerce site with an editorial look, an English and French storefront, prices in rupiah, and an admin dashboard with inventory management.",
+    kind: "Web app", problem: "Give a fashion label a storefront and a back office that stay in sync.",
+    outcome: "125 sample products with variants and stock. Admin changes appear on the storefront, and stock drops at checkout and returns when an order is cancelled.", stack: ["React", "Vite", "Express", "SQLite"],
+    shots: shots("vassel-fashion", 1), alt: "VASSEL: editorial storefront hero with a model holding a handbag" },
 ];
 /** Frameworks and tools named in the showcased projects' own descriptions (`stack` above), most used first.
  * Languages are left out (the language chips count them), and so are techniques and practices. */
-const notTools = new Set(["TypeScript", "JavaScript", "Kotlin", "C#", "CNN", "In-browser demo", "Offline-first", "Offline", "SMS"]);
+const notTools = new Set(["TypeScript", "JavaScript", "Kotlin", "C#", "CNN", "In-browser demo", "Offline-first", "Offline", "SMS", "Browser storage"]);
 export const projectTools: readonly string[] = (() => {
   const counts = new Map<string, number>();
   for (const tool of projectShowcase.flatMap(project => project.stack)) if (!notTools.has(tool)) counts.set(tool, (counts.get(tool) ?? 0) + 1);
@@ -194,16 +261,30 @@ export const monitorOf = (projectIndex: number) => projectIndex % 3;
 
 /** Shown on the stack boards until the live GitHub language count arrives (public repos, primary language). */
 export const languageFallback = [
-  { language: "Kotlin", count: 4 }, { language: "TypeScript", count: 4 }, { language: "C#", count: 1 },
-  { language: "JavaScript", count: 1 }, { language: "Jupyter Notebook", count: 1 }, { language: "Python", count: 1 },
+  { language: "TypeScript", count: 25 }, { language: "Kotlin", count: 4 }, { language: "Python", count: 4 },
+  { language: "CSS", count: 2 }, { language: "HTML", count: 2 }, { language: "JavaScript", count: 2 },
 ] as const;
 
-/** Technologies explicitly documented in the UMN Medical Center role above.
- * The illustrative screens are not evidence of additional tool proficiency. */
+/** Frameworks and tools that appear in the UMN Medical Center role and in the public repositories' own
+ * descriptions (Rails 8 and PostgreSQL in EDUVIA; Next.js in BALIKIN; React and Hono in APEX-GYM; Kotlin,
+ * Jetpack Compose and Supabase in Ngantriin; Flutter in Smart-Toko). Six rows fit one stack board. */
 export const techStack = [
-  { id: "laravel", name: "Laravel", category: "Web applications", detail: "Building responsive web applications." },
-  { id: "rest", name: "REST APIs", category: "Integrations", detail: "Connecting application features and data." },
-  { id: "mysql", name: "MySQL", category: "Database", detail: "Working with application data and database integration." },
+  { id: "react-next", name: "React & Next.js", category: "Frontend", detail: "Responsive TypeScript interfaces: BALIKIN, APEX GYM, F&B Experience." },
+  { id: "laravel", name: "Laravel", category: "Web applications", detail: "Responsive web applications with secure authentication, built at UMN Medical Center." },
+  { id: "rails", name: "Rails 8", category: "Full-stack", detail: "Hotwire and PostgreSQL: EDUVIA." },
+  { id: "kotlin", name: "Kotlin", category: "Android", detail: "Jetpack Compose, MVVM, Room and WorkManager: Ngantriin, JalanKita, BUNDA SIAGA." },
+  { id: "data", name: "PostgreSQL · MySQL", category: "Database", detail: "Application data, Supabase and database integration." },
+  { id: "rest", name: "REST APIs", category: "Integrations", detail: "Connecting application features, services and data." },
 ] as const;
 
-export const developmentPractices = ["Responsive interfaces", "Authentication", "Authorization"] as const;
+/** The toolkit by kind of work, for the stack boards and the Tech Stack chapter. Everything here is named in the public
+ * repositories (descriptions and READMEs) or in the GitHub profile's own toolkit list. Four items per kind fit a board row. */
+export const stackGroups = [
+  { id: "frontend", label: "Frontend", items: ["React", "Next.js", "Vite", "Tailwind"] },
+  { id: "backend", label: "Backend", items: ["Laravel", "Rails 8", "Express", "Hono"] },
+  { id: "mobile", label: "Mobile", items: ["Kotlin", "Jetpack Compose", "Flutter"] },
+  { id: "data", label: "Data", items: ["PostgreSQL", "MySQL", "SQLite", "Supabase"] },
+  { id: "tools", label: "Tools", items: ["Git", "Docker", "Figma", "Unity"] },
+] as const;
+
+export const developmentPractices = ["Responsive interfaces", "Authentication", "Authorization", "Offline-first"] as const;

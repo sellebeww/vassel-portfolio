@@ -13,7 +13,8 @@ const aim = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1
 const vertexShader = `varying vec2 vUv;
   void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 
-function ProjectedImage({ src, state, still }: { src: string; state: ProjectionRef; still: boolean }) {
+/** Transition styles take turns photo by photo: 0 dissolve, 1 push, 2 zoom through, 3 iris. */
+function ProjectedImage({ src, state, still, variant }: { src: string; state: ProjectionRef; still: boolean; variant: number }) {
   const texture = useTexture(src);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 8;
@@ -22,7 +23,7 @@ function ProjectedImage({ src, state, still }: { src: string; state: ProjectionR
   const uniforms = useMemo(() => ({
     uFrom: { value: texture }, uTo: { value: texture },
     uFromAspect: { value: 1 }, uToAspect: { value: 1 },
-    uMix: { value: 1 }, uTime: { value: 0 }, uLight: { value: 1 }, uWeave: { value: 0 },
+    uMix: { value: 1 }, uTime: { value: 0 }, uLight: { value: 1 }, uWeave: { value: 0 }, uStyle: { value: 0 }, uAge: { value: 99 },
   // The same material retains the outgoing texture until the incoming one loads.
   }), []);
   useEffect(() => {
@@ -33,16 +34,18 @@ function ProjectedImage({ src, state, still }: { src: string; state: ProjectionR
     uniforms.uTo.value = texture;
     uniforms.uFromAspect.value = outgoing.image.width / outgoing.image.height;
     uniforms.uToAspect.value = texture.image.width / texture.image.height;
+    uniforms.uStyle.value = variant % 4;
     if (previous.current !== texture && previous.current) state.current.changedAt = state.current.time;
     if (!previous.current || still) state.current.changedAt = state.current.time - 1;
     previous.current = texture;
-  }, [texture, uniforms, state, still]);
+  }, [texture, uniforms, state, still, variant]);
   useFrame(() => {
     if (!material.current) return;
     const uniforms = material.current.uniforms;
     const value = state.current;
     uniforms.uMix.value = still ? 1 : value.dissolve;
     uniforms.uTime.value = value.time;
+    uniforms.uAge.value = still ? 99 : value.time - value.changedAt;
     uniforms.uLight.value = value.brightness;
     uniforms.uWeave.value = still ? 0 : Math.sin(value.dissolve * Math.PI) * .00065;
   });
@@ -51,16 +54,34 @@ function ProjectedImage({ src, state, still }: { src: string; state: ProjectionR
     <shaderMaterial ref={material} uniforms={uniforms} toneMapped={false} vertexShader={vertexShader} fragmentShader={`
       varying vec2 vUv;
       uniform sampler2D uFrom, uTo;
-      uniform float uFromAspect, uToAspect, uMix, uTime, uLight, uWeave;
-      vec3 photograph(sampler2D photo, float aspect, vec2 uv) {
-        vec2 fit = vec2(max(1.0, 1.53 / .91 / aspect), max(1.0, aspect / (1.53 / .91)));
-        vec2 sampleUv = (uv - .5) * fit + .5;
+      uniform float uFromAspect, uToAspect, uMix, uTime, uLight, uWeave, uStyle, uAge;
+      const float SCREEN = 1.53 / .91;
+      // The photograph is shown whole, over a heavily blurred, darkened copy of itself that fills the rest of the
+      // screen, so a portrait is framed by its own colours instead of two black bars. "zoom" is a slow push-in.
+      vec3 photograph(sampler2D photo, float aspect, vec2 uv, float zoom) {
+        vec2 fit = vec2(max(1.0, SCREEN / aspect), max(1.0, aspect / SCREEN));
+        vec2 sampleUv = ((uv - .5) / zoom) * fit + .5;
         float inside = step(0.0, sampleUv.x) * step(sampleUv.x, 1.0) * step(0.0, sampleUv.y) * step(sampleUv.y, 1.0);
-        return mix(vec3(.024, .029, .026), texture2D(photo, clamp(sampleUv, 0.0, 1.0)).rgb, inside);
+        vec2 cover = vec2(min(1.0, SCREEN / aspect), min(1.0, aspect / SCREEN));
+        vec3 backdrop = texture2D(photo, clamp((uv - .5) * cover + .5, 0.0, 1.0), 5.0).rgb * .46;
+        return mix(backdrop, texture2D(photo, clamp(sampleUv, 0.0, 1.0)).rgb, inside);
       }
       void main() {
         vec2 uv = vUv + vec2(sin(uTime * 12.0), cos(uTime * 9.0)) * uWeave;
-        vec3 color = mix(photograph(uFrom, uFromAspect, uv), photograph(uTo, uToAspect, uv), uMix);
+        float m = smoothstep(0.0, 1.0, uMix);
+        float push = 1.0 + .045 * smoothstep(0.0, 9.0, uAge);
+        vec3 color;
+        if (uStyle < .5) {
+          color = mix(photograph(uFrom, uFromAspect, uv, 1.045), photograph(uTo, uToAspect, uv, push), m);
+        } else if (uStyle < 1.5) {
+          float seam = step(1.0 - m, uv.x);
+          color = mix(photograph(uFrom, uFromAspect, uv + vec2(m, 0.0), 1.045), photograph(uTo, uToAspect, uv - vec2(1.0 - m, 0.0), push), seam);
+        } else if (uStyle < 2.5) {
+          color = mix(photograph(uFrom, uFromAspect, uv, 1.045 + .7 * m), photograph(uTo, uToAspect, uv, push * (.82 + .18 * m)), m);
+        } else {
+          float radius = length((uv - .5) * vec2(SCREEN, 1.0)), reach = m * 1.25;
+          color = mix(photograph(uFrom, uFromAspect, uv, 1.045), photograph(uTo, uToAspect, uv, push), smoothstep(reach, reach - .14, radius));
+        }
         float grain = fract(sin(dot(floor(vUv * vec2(1100., 655.)), vec2(12.9898,78.233)) + floor(uTime * 12.)) * 43758.5453) - .5;
         float vignette = 1.0 - .17 * pow(length((vUv - .5) * 1.4), 2.0);
         vec2 edge = smoothstep(vec2(0.), vec2(.012), vUv) * smoothstep(vec2(0.), vec2(.012), 1. - vUv);
@@ -148,7 +169,7 @@ function BeamDust({ state }: { state: ProjectionRef }) {
 }
 
 /** One optical system: photograph, light, dust and small lens movement share time. */
-export default function CinematicProjection({ src, still, onNext }: { src: string; still: boolean; onNext: () => void }) {
+export default function CinematicProjection({ src, still, onNext, variant = 0 }: { src: string; still: boolean; onNext: () => void; variant?: number }) {
   const state = useRef<ProjectionState>({ time: 0, changedAt: -1, brightness: 1, dissolve: 1 });
   const barrel = useRef<THREE.Group>(null), lastTick = useRef<number | null>(null);
   useEffect(() => {
@@ -162,7 +183,7 @@ export default function CinematicProjection({ src, still, onNext }: { src: strin
     else {
       if (lastTick.current !== null) current.time += (now - lastTick.current) / 1000;
       lastTick.current = now;
-      current.dissolve = THREE.MathUtils.smoothstep(current.time - current.changedAt, 0, .9);
+      current.dissolve = THREE.MathUtils.smoothstep(current.time - current.changedAt, 0, 1.15);
       // Low amplitude, aperiodic film transport; never a strobe or hard blackout.
       const transport = Math.sin(current.dissolve * Math.PI);
       current.brightness = 1 + Math.sin(current.time * 17.3) * .006 + Math.sin(current.time * 27.1) * .004 - transport * .045;
@@ -170,7 +191,7 @@ export default function CinematicProjection({ src, still, onNext }: { src: strin
     if (barrel.current) barrel.current.position.z = still ? 0 : Math.sin(current.dissolve * Math.PI) * .0018;
   }, -.5);
   return <group name="cinematic-projection-system">
-    <Suspense fallback={null}><ProjectedImage src={src} state={state} still={still} /></Suspense>
+    <Suspense fallback={null}><ProjectedImage src={src} state={state} still={still} variant={variant} /></Suspense>
     <Beam state={state} /><BeamDust state={state} />
     <group name="physical-projector" position={[.4, -1.06, .83]} onClick={event => { event.stopPropagation(); onNext(); }}
       onPointerOver={event => { event.stopPropagation(); setCursorLabel("Next photo"); }} onPointerOut={() => setCursorLabel("")}>
