@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import { appendFileSync, writeFileSync } from "node:fs";
 
 /** Social cards and canonical links need absolute URLs. Set VITE_SITE_URL (for example
  * https://vassel.example) when deploying; without it those tags are left out entirely. */
@@ -14,8 +15,23 @@ function siteUrl(siteUrlValue: string): Plugin {
   };
 }
 
+/** sitemap.xml and the robots.txt pointer need absolute URLs, so they are written only when VITE_SITE_URL is set. */
+function sitemap(siteUrlValue: string): Plugin {
+  const base = siteUrlValue.replace(/\/+$/, "");
+  return {
+    name: "sitemap",
+    apply: "build",
+    closeBundle() {
+      if (!base) return;
+      const lastmod = new Date().toISOString().slice(0, 10);
+      writeFileSync("dist/sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${base}/</loc><lastmod>${lastmod}</lastmod><priority>1.0</priority></url>\n</urlset>\n`);
+      appendFileSync("dist/robots.txt", `\nSitemap: ${base}/sitemap.xml\n`);
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), siteUrl(loadEnv(mode, ".", "VITE_").VITE_SITE_URL ?? "")],
+  plugins: [react(), siteUrl(loadEnv(mode, ".", "VITE_").VITE_SITE_URL ?? ""), sitemap(loadEnv(mode, ".", "VITE_").VITE_SITE_URL ?? "")],
   build: {
     target: "es2022",
     // three.js alone is ~950 kB minified (about 285 kB gzip). It is split so the app code and the engine cache
