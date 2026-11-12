@@ -11,7 +11,7 @@ import { overlayChapter, overlayHash, parseOverlay, type Overlay } from "./lib/d
 import { languageStats, timeAgo } from "./lib/github";
 import type { PaletteCommand } from "./lib/palette";
 const RoomCanvas = lazy(() => import("./scene/RoomScene"));
-import { achievementPreviews, achievements, cameraStops, chapterTitle, developmentPractices, experiencePhotos, experiences, githubUser, languageFallback, profile, projectShowcase, projectTools, resolveChapterId, showcaseWindow, stackGroups, type ChapterId } from "./data/portfolio";
+import { achievementPreviews, achievements, cameraStops, chapterTitle, developmentPractices, experiencePhotos, experiences, languageFallback, profile, projectShowcase, projectTools, resolveChapterId, showcaseWindow, stackGroups, type ChapterId } from "./data/portfolio";
 
 /** The projector opens on the developer role (the one a visitor arriving from "Full-stack developer" is
  * looking for); the slideshow then runs through all ten roles in their usual order. */
@@ -154,7 +154,6 @@ export default function App() {
   const featured = featuredPhoto.experience;
   const filmstrip = showcaseWindow(experienceShowcase.index, experiencePhotos.length);
   const award = achievements[awardShowcase.index];
-  const awardNeighbours = showcaseWindow(awardShowcase.index, achievements.length, 3);
 
   const notify = useCallback((message: string) => { setToast(message); }, []);
   const toggleReadingView = useCallback(() => {

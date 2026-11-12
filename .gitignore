@@ -7,3 +7,6 @@ dist
 # local only
 source/
 artifacts/
+test-results/
+playwright-report/
+docs/perf/*-full.json
