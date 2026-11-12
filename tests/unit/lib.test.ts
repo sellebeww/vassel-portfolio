@@ -5,6 +5,7 @@ import { filterRepos, languageStats, parseRepos, rankRepos, timeAgo } from "../.
 import { rankCommands, scoreCommand } from "../../src/lib/palette";
 import { overlayHash, parseOverlay } from "../../src/lib/deeplink";
 import { journeyAt, scrollAt } from "../../src/scene/journey";
+import { lightReason } from "../../src/lib/capability";
 import { achievements, cameraStops, experiences, projectShowcase, resolveChapterId } from "../../src/data/portfolio";
 
 const api = [
@@ -93,5 +94,20 @@ describe("portfolio data", () => {
       ...projectShowcase.flatMap(project => project.shots.map(shot => `public${shot}`)),
     ];
     expect(files.filter(file => !existsSync(file))).toEqual([]);
+  });
+});
+
+describe("capability", () => {
+  const gpu = (renderer: string, webgl = true) => ({ webgl, renderer });
+  it("starts on the light version for Data Saver, low memory, no WebGL and software renderers", () => {
+    expect(lightReason({ saveData: true, gpu: gpu("ANGLE (NVIDIA GeForce RTX 3060)") })).toBe("data-saver");
+    expect(lightReason({ deviceMemory: 2, gpu: gpu("Mali-G78") })).toBe("low-memory");
+    expect(lightReason({ gpu: gpu("", false) })).toBe("no-webgl");
+    expect(lightReason({ gpu: gpu("ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)))") })).toBe("software-renderer");
+    expect(lightReason({ gpu: gpu("llvmpipe (LLVM 15.0.7, 256 bits)") })).toBe("software-renderer");
+  });
+  it("keeps the 3D room for a real GPU, and for unknown hints", () => {
+    expect(lightReason({ deviceMemory: 8, gpu: gpu("ANGLE (Apple, Apple M2, OpenGL 4.1)") })).toBeNull();
+    expect(lightReason({ gpu: gpu("Adreno (TM) 730") })).toBeNull();
   });
 });

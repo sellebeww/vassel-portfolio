@@ -9,6 +9,7 @@ import CursorLabel from "./CursorLabel";
 import { clamp, journeyAt, scrollAt, snapStops } from "./scene/journey";
 import { overlayChapter, overlayHash, parseOverlay, type Overlay } from "./lib/deeplink";
 import { languageStats, timeAgo } from "./lib/github";
+import { lightReason, probeGpu } from "./lib/capability";
 import type { PaletteCommand } from "./lib/palette";
 const RoomCanvas = lazy(() => import("./scene/RoomScene"));
 import { achievementPreviews, achievements, cameraStops, chapterTitle, developmentPractices, experiencePhotos, experiences, languageFallback, profile, projectShowcase, projectTools, resolveChapterId, showcaseWindow, stackGroups, type ChapterId } from "./data/portfolio";
@@ -83,9 +84,10 @@ function preferredView(): "simple" | "3d" | null {
     const asked = new URLSearchParams(window.location.search).get("view") ?? window.localStorage.getItem(VIEW_KEY);
     if (asked === "simple" || asked === "3d") return asked;
   } catch { /* storage is optional */ }
-  // No stated choice: Data Saver or a device with 2 GB of memory or less starts on the light version (the 3D room is ~4 MB).
+  // No stated choice: Data Saver, a device with 2 GB of memory or less, no WebGL or a software renderer starts on the
+  // light version (the 3D room is ~1.5 MB of models plus shaders). The visitor can still open the room from the dock.
   const hints = navigator as Navigator & { connection?: { saveData?: boolean }; deviceMemory?: number };
-  return hints.connection?.saveData || (hints.deviceMemory !== undefined && hints.deviceMemory <= 2) ? "simple" : null;
+  return lightReason({ saveData: hints.connection?.saveData, deviceMemory: hints.deviceMemory, gpu: probeGpu() }) ? "simple" : null;
 }
 function rememberView(view: "simple" | "3d") { if (!qaRun) try { window.localStorage.setItem(VIEW_KEY, view); } catch { /* storage is optional */ } }
 
