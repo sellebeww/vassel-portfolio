@@ -348,9 +348,13 @@ export default function App() {
     const observer = new IntersectionObserver(entries => entries.forEach(entry => {
       if (entry.isIntersecting) { entry.target.classList.add("is-in"); observer.unobserve(entry.target); }
     }), { rootMargin: "0px 0px -6% 0px" });
+    const blocks = Array.from(document.querySelectorAll<HTMLElement>(".is-fallback .chapter-card > *:not(.fallback-notice), .is-fallback .project-grid > li, .is-fallback .certificate-grid > li, .is-fallback .stack-groups > li, .is-fallback .language-bars > li"));
+    // What is already on screen is never hidden: the first block is the page's largest paint, so it must not wait for a fade.
+    const above = new Set(blocks.filter(element => element.getBoundingClientRect().top < window.innerHeight));
     root.dataset.reveal = "on";
-    document.querySelectorAll<HTMLElement>(".is-fallback .chapter-card > *:not(.fallback-notice), .is-fallback .project-grid > li, .is-fallback .certificate-grid > li, .is-fallback .stack-groups > li, .is-fallback .language-bars > li").forEach((element, order) => {
+    blocks.forEach((element, order) => {
       if (element.classList.contains("is-in")) return;
+      if (above.has(element)) { element.classList.add("is-in"); return; }
       element.style.transitionDelay = `${(order % 3) * 70}ms`; observer.observe(element);
     });
     return () => { observer.disconnect(); delete root.dataset.reveal; };
