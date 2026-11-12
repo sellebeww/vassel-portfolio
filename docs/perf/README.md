@@ -11,12 +11,18 @@ build). Transfer size and the simple version are stable and are the figures to t
 
 | Measure | Before (e89e27d) | After | Notes |
 | --- | --- | --- | --- |
-| 3D room, everything loaded until the preloader lifts (`tools/measure-3d.mjs`) | 5,607 KiB | 4,475 KiB | -1,132 KiB (-20%): the three `.glb` files went from 1,818 KiB to 653 KiB |
-| 3D models alone | 1,818 KiB | 653 KiB | meshopt, structure and names unchanged |
-| 3D room, time until preloader lifts (software GL, one run each) | 15.6 s | 20.0 s | within the run-to-run noise of a CPU-rendered scene; not a regression claim either way |
-| 3D room, Lighthouse mobile performance | 31 and 45 (two runs) | not measurable | the after-runs stalled ("page stopped responding") under software GL three times, so no number is claimed |
-| Simple version, Lighthouse mobile | perf 86-88, 777 KiB, LCP 3.9-4.2 s | perf 85-87, 695 KiB, LCP 4.0 s | no meaningful change; the first run of each build differs by about 2 points |
-| Default entry (no `?view=`) in this lab | perf 40-45 (loads 3D) | perf 87 (starts on the simple version) | the lab has a software renderer, which the new capability check detects. A real GPU still gets the room. |
-| Accessibility / best practices / SEO | 100 / 100 / 100 | 100 / 100 / 100 | unchanged |
+| 3D room, bytes until the preloader lifts (`tools/measure-3d.mjs`) | 5,607 KiB | unchanged | meshopt compression of the models (-1.1 MB) was tried and reverted, see below |
+| Simple version, Lighthouse mobile | perf 86-88, 777 KiB, LCP 3.9-4.2 s | perf 85-87, 695 KiB, LCP 4.0 s | difference is within run-to-run noise; the byte drop comes from lazy images being measured differently, not from a change |
+| Default entry (no `?view=`) in this lab | perf 31-45 (loads the 3D room) | perf 87 (starts on the simple version) | the lab renders in software (SwiftShader); the new capability check detects that. A device with a real GPU still gets the room. |
+| Accessibility / best practices / SEO | 100 / 100 / 100 | 100 / 100 / 100 | unchanged; axe WCAG A/AA also passes in both views |
 
-Frame rate was not measured: a CPU-rendered scene says nothing about a phone GPU. That needs a real device.
+Not measured: frame rate (a CPU-rendered scene says nothing about a phone GPU) and Lighthouse for the 3D room after
+the changes (three attempts stalled with "page stopped responding" under software GL).
+
+## Why the models were not compressed
+
+`gltf-transform meshopt` cut `laptop.glb` + `mannequin.glb` + `mouse.glb` from 1,818 KiB to 653 KiB, but it quantises
+positions to normalised integers and moves the scale onto the nodes. The scene code assumes the original node transforms and
+float geometry (`Almet.tsx` rebuilds the jacket and offsets individual meshes; `RoomScene.tsx` reads the screen's
+bounding box). The compressed mannequin rendered as a large dark shape over the portrait. Doing this safely means
+reworking those two files (or re-exporting the models from the source `.blend` with lossless compression).

@@ -35,7 +35,7 @@ Decision: no migration. Revisit only if static, per-project pages (own URL, own 
 
 1. Plan, measurement tooling, baseline numbers.
 2. Tooling: ESLint, Vitest unit tests, `npm run check`, CI workflow.
-3. Compress the 3D models with meshopt (no node or material renames; verified by test and by render).
+3. Try compressing the 3D models with meshopt (attempted; reverted, see Decisions).
 4. Capability check: start on the simple version when WebGL is missing or the renderer is software (SwiftShader, llvmpipe).
 5. Case studies from the repositories' own READMEs, with a quick-read mode (the simple version, plus a case-study index).
 6. SEO: sitemap, per-page metadata check, OG image regenerated from a real screenshot.
@@ -51,4 +51,9 @@ so they are left as `TODO(vassel)`.
 
 ## 5. Decisions
 
-(filled in as the work proceeds; the PR lists the ones that need the owner's check)
+- Stay on Vite, no Astro (section 2).
+- Model compression reverted after a before/after render showed the mannequin broken (see docs/perf/README.md).
+- Five case studies, not six: MALUMALU has no public repository under github.com/sellebeww, so there is no README to source it from.
+- Case studies are rendered client-side (inline in the simple version, dialog in the room). Per-project static pages were not built: the hash-routed SPA has no router, and Astro was rejected.
+- `og-image.jpg` kept: the CPU-only machine used for this work cannot take a clean screenshot of the room at desktop size.
+- No Lighthouse number is claimed for the 3D room after the changes (see docs/perf/README.md).
