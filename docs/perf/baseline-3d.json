@@ -1,0 +1,17 @@
+{
+  "url": "http://localhost:4173/?view=3d",
+  "label": "baseline-3d",
+  "fetchTime": "2026-11-12T05:11:33.043Z",
+  "scores": {
+    "performance": 31,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 100
+  },
+  "fcp": "2.8 s",
+  "lcp": "26.1 s",
+  "tbt": "143,320 ms",
+  "cls": "0.002",
+  "speedIndex": "26.8 s",
+  "transferred": "Total size was 4,489 KiB"
+}

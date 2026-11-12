@@ -1,0 +1,17 @@
+{
+  "url": "http://localhost:4173/?view=simple",
+  "label": "baseline-simple",
+  "fetchTime": "2026-11-12T05:13:04.525Z",
+  "scores": {
+    "performance": 86,
+    "accessibility": 100,
+    "best-practices": 100,
+    "seo": 100
+  },
+  "fcp": "1.6 s",
+  "lcp": "4.2 s",
+  "tbt": "30 ms",
+  "cls": "0",
+  "speedIndex": "1.6 s",
+  "transferred": "Total size was 777 KiB"
+}

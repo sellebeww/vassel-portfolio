@@ -1,18 +1,19 @@
 import fs from 'node:fs/promises';
-import puppeteer from 'puppeteer-core';
+import { chromium } from '@playwright/test';
 
 // A static editorial card built from the actual room and the site's own fonts.
-// Run qa-polish first to refresh the source screenshot.
+// Pass a screenshot of the running room as the first argument (a PNG taken from `npm run preview` at #intro on a
+// machine with a GPU); without one it uses artifacts/polish/after/desk-shadows.png from tools/qa-polish.mjs.
 const asset = async (path, mime) => `data:${mime};base64,${(await fs.readFile(new URL(path, import.meta.url))).toString('base64')}`;
 const [room, display, body] = await Promise.all([
-  asset('../artifacts/polish/after/desk-shadows.png', 'image/png'),
+  asset(process.argv[2] ?? '../artifacts/polish/after/desk-shadows.png', 'image/png'),
   asset('../public/fonts/newsreader.woff2', 'font/woff2'),
   asset('../public/fonts/geist.woff2', 'font/woff2'),
 ]);
-const browser = await puppeteer.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true, args: ['--no-first-run'] });
+const browser = await chromium.launch();
 try {
   const page = await browser.newPage();
-  await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 });
+  await page.setViewportSize({ width: 1200, height: 630 });
   await page.setContent(`<style>
     @font-face{font-family:Display;src:url('${display}')}@font-face{font-family:Body;src:url('${body}')}
     *{box-sizing:border-box}body{margin:0;background:#0f1920;color:#efe9df;font-family:Body}

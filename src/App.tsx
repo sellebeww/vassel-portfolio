@@ -3,15 +3,17 @@ import { useShowcase } from "./useShowcase";
 import { useRepos } from "./useRepos";
 import ContactInterface from "./ContactInterface";
 import CommandPalette from "./CommandPalette";
-import { AchievementGallery, AllExperiences, ExperienceDetail, ProjectInfo, ReposArchive, Resume } from "./Overlays";
+import { CaseStudyIndex, CaseStudyList } from "./CaseStudies";
+import { Modal, AchievementGallery, AllExperiences, ExperienceDetail, ProjectInfo, ReposArchive, Resume } from "./Overlays";
 import { Ambience } from "./lib/ambience";
 import CursorLabel from "./CursorLabel";
 import { clamp, journeyAt, scrollAt, snapStops } from "./scene/journey";
 import { overlayChapter, overlayHash, parseOverlay, type Overlay } from "./lib/deeplink";
 import { languageStats, timeAgo } from "./lib/github";
+import { lightReason, probeGpu } from "./lib/capability";
 import type { PaletteCommand } from "./lib/palette";
 const RoomCanvas = lazy(() => import("./scene/RoomScene"));
-import { achievementPreviews, achievements, cameraStops, chapterTitle, developmentPractices, experiencePhotos, experiences, githubUser, languageFallback, profile, projectShowcase, projectTools, resolveChapterId, showcaseWindow, stackGroups, type ChapterId } from "./data/portfolio";
+import { achievementPreviews, achievements, cameraStops, chapterTitle, developmentPractices, experiencePhotos, experiences, languageFallback, profile, projectShowcase, projectTools, resolveChapterId, showcaseWindow, stackGroups, type ChapterId } from "./data/portfolio";
 
 /** The projector opens on the developer role (the one a visitor arriving from "Full-stack developer" is
  * looking for); the slideshow then runs through all ten roles in their usual order. */
@@ -83,9 +85,10 @@ function preferredView(): "simple" | "3d" | null {
     const asked = new URLSearchParams(window.location.search).get("view") ?? window.localStorage.getItem(VIEW_KEY);
     if (asked === "simple" || asked === "3d") return asked;
   } catch { /* storage is optional */ }
-  // No stated choice: Data Saver or a device with 2 GB of memory or less starts on the light version (the 3D room is ~4 MB).
+  // No stated choice: Data Saver, a device with 2 GB of memory or less, no WebGL or a software renderer starts on the
+  // light version (the 3D room is ~1.5 MB of models plus shaders). The visitor can still open the room from the dock.
   const hints = navigator as Navigator & { connection?: { saveData?: boolean }; deviceMemory?: number };
-  return hints.connection?.saveData || (hints.deviceMemory !== undefined && hints.deviceMemory <= 2) ? "simple" : null;
+  return lightReason({ saveData: hints.connection?.saveData, deviceMemory: hints.deviceMemory, gpu: probeGpu() }) ? "simple" : null;
 }
 function rememberView(view: "simple" | "3d") { if (!qaRun) try { window.localStorage.setItem(VIEW_KEY, view); } catch { /* storage is optional */ } }
 
@@ -154,7 +157,6 @@ export default function App() {
   const featured = featuredPhoto.experience;
   const filmstrip = showcaseWindow(experienceShowcase.index, experiencePhotos.length);
   const award = achievements[awardShowcase.index];
-  const awardNeighbours = showcaseWindow(awardShowcase.index, achievements.length, 3);
 
   const notify = useCallback((message: string) => { setToast(message); }, []);
   const toggleReadingView = useCallback(() => {
@@ -346,9 +348,13 @@ export default function App() {
     const observer = new IntersectionObserver(entries => entries.forEach(entry => {
       if (entry.isIntersecting) { entry.target.classList.add("is-in"); observer.unobserve(entry.target); }
     }), { rootMargin: "0px 0px -6% 0px" });
+    const blocks = Array.from(document.querySelectorAll<HTMLElement>(".is-fallback .chapter-card > *:not(.fallback-notice), .is-fallback .project-grid > li, .is-fallback .certificate-grid > li, .is-fallback .stack-groups > li, .is-fallback .language-bars > li"));
+    // What is already on screen is never hidden: the first block is the page's largest paint, so it must not wait for a fade.
+    const above = new Set(blocks.filter(element => element.getBoundingClientRect().top < window.innerHeight));
     root.dataset.reveal = "on";
-    document.querySelectorAll<HTMLElement>(".is-fallback .chapter-card > *:not(.fallback-notice), .is-fallback .project-grid > li, .is-fallback .certificate-grid > li, .is-fallback .stack-groups > li, .is-fallback .language-bars > li").forEach((element, order) => {
+    blocks.forEach((element, order) => {
       if (element.classList.contains("is-in")) return;
+      if (above.has(element)) { element.classList.add("is-in"); return; }
       element.style.transitionDelay = `${(order % 3) * 70}ms`; observer.observe(element);
     });
     return () => { observer.disconnect(); delete root.dataset.reveal; };
@@ -370,6 +376,7 @@ export default function App() {
     ...cameraStops.map((stop, index) => ({ id: `go-${stop.id}`, group: "Go to", label: stop.label, hint: `Chapter ${index + 1}`, shortcut: String(index + 1), run: () => goTo(stop.id) })),
     { id: "open-roles", group: "Open", label: "All university roles", hint: `${experiences.length} roles, with photos`, keywords: "experience", run: () => openOverlay({ kind: "roles" }) },
     { id: "open-certificates", group: "Open", label: "All certificates", hint: "9 achievements", keywords: "achievements awards gallery", run: () => openOverlay({ kind: "certificates", initial: null }) },
+    { id: "open-cases", group: "Open", label: "Case studies", hint: "Five projects, quick read", keywords: "projects assay paper trail falsify hak data apex gym solidity evidence", run: () => openOverlay({ kind: "cases" }) },
     { id: "open-repos", group: "Open", label: "Projects on GitHub", hint: "Live repository archive", keywords: "projects repositories code source", run: () => openOverlay({ kind: "repos" }) },
     { id: "open-resume", group: "Open", label: "Résumé", hint: "Download CV, print or save as PDF", keywords: "cv resume curriculum download print pdf", run: () => openOverlay({ kind: "resume" }) },
     ...(ambience.current?.supported ? [{ id: "room-sound", group: "Room", label: `Music ${soundOn ? "off" : "on"}`, hint: "Chill jazz, synthesised live in your browser", shortcut: "S", keywords: "audio music mute volume", run: onToggleSound }] : []),
@@ -512,6 +519,12 @@ export default function App() {
           <h2>Selected work.</h2>
           <p className="chapter-deck">Web, Android, and small worlds to explore.</p>
           {sceneFailed ? <>
+            <section className="case-section" aria-labelledby="case-heading">
+              <h3 id="case-heading">Case studies</h3>
+              <p className="chapter-deck">Five projects with the most engineering, each with its problem, evidence and stated limits. Written from the repositories’ own READMEs.</p>
+              <CaseStudyList level="h4" />
+            </section>
+            <h3 className="project-grid-heading">More projects</h3>
             <div className="filter-row" role="group" aria-label="Filter projects">{projectGroups.map(([group, count]) => <button key={group} aria-pressed={projectFilter === group} onClick={() => { setProjectFilter(group); setAllProjects(false); }}>{group}<small>{count}</small></button>)}</div>
             <ul className="project-grid" aria-label="Selected projects">{visibleProjects.map(project => <li key={project.repo}><ProjectCard project={project} now={now} image /></li>)}</ul>
             {hiddenProjects > 0 && <button className="show-more" onClick={() => setAllProjects(true)}>Show all {filteredProjects.length} projects <span aria-hidden="true">↓</span></button>}
@@ -526,6 +539,7 @@ export default function App() {
             </div>
             <ProjectCard key={featuredProject.repo} project={featuredProject} now={now} detailsOpen={projectDetailsOpen} onDetails={setProjectDetailsOpen} />
           </div>}
+          {!sceneFailed && <button className="text-button" onClick={() => openOverlay({ kind: "cases" })}>Case studies, quick read <span>↗</span></button>}
           <button className="text-button text-button-quiet" onClick={() => openOverlay({ kind: "repos" })}>{liveRepos.length ? `All ${liveRepos.length} repositories` : "Projects on GitHub"} <span>↗</span></button>
           {!sceneFailed && <button className="text-link" onClick={() => openOverlay({ kind: "project" })}>About these screens</button>}
         </Chapter>
@@ -552,6 +566,7 @@ export default function App() {
       })()}
       {overlay?.kind === "roles" && <AllExperiences onClose={closeOverlay} onSelect={item => openOverlay({ kind: "role", id: item.id, photo: 0 })} />}
       {overlay?.kind === "certificates" && <AchievementGallery initial={overlay.initial} onClose={closeOverlay} onSelect={index => syncAddress({ kind: "certificates", initial: index })} />}
+      {overlay?.kind === "cases" && <Modal title="Case studies" eyebrow="Quick read" wide onClose={closeOverlay}><CaseStudyIndex onPick={slug => document.getElementById(`case-${slug}`)?.scrollIntoView({ block: "start" })} /><CaseStudyList level="h3" /></Modal>}
       {overlay?.kind === "repos" && <ReposArchive state={repos} onClose={closeOverlay} />}
       {overlay?.kind === "resume" && <Resume repos={liveRepos} onClose={closeOverlay} />}
       {overlay?.kind === "project" && <ProjectInfo title={featuredProject.title} detail={featuredProject.summary} url={featuredProject.url} onClose={closeOverlay} />}
