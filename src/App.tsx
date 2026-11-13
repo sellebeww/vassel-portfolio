@@ -94,7 +94,7 @@ function rememberView(view: "simple" | "3d") { if (!qaRun) try { window.localSto
 
 /** The simple version filters the project grid by what each project is, read from its own `kind`. */
 const projectGroup = (project: { kind: string }) => /android/i.test(project.kind) ? "Android" : /game/i.test(project.kind) ? "Games" : /machine/i.test(project.kind) ? "AI & ML" : "Web";
-const FIRST_PROJECTS = 6;
+const FIRST_PROJECTS = 3;
 
 export default function App() {
   const progress = useRef(0);
