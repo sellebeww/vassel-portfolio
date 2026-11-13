@@ -519,11 +519,6 @@ export default function App() {
           <h2>Selected work.</h2>
           <p className="chapter-deck">Web, Android, and small worlds to explore.</p>
           {sceneFailed ? <>
-            <section className="case-section" aria-labelledby="case-heading">
-              <h3 id="case-heading">Case studies</h3>
-              <p className="chapter-deck">Five projects with the most engineering, each with its problem, evidence and stated limits. Written from the repositories’ own READMEs.</p>
-              <CaseStudyList level="h4" />
-            </section>
             <h3 className="project-grid-heading">More projects</h3>
             <div className="filter-row" role="group" aria-label="Filter projects">{projectGroups.map(([group, count]) => <button key={group} aria-pressed={projectFilter === group} onClick={() => { setProjectFilter(group); setAllProjects(false); }}>{group}<small>{count}</small></button>)}</div>
             <ul className="project-grid" aria-label="Selected projects">{visibleProjects.map(project => <li key={project.repo}><ProjectCard project={project} now={now} image /></li>)}</ul>
